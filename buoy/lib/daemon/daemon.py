@@ -13,17 +13,17 @@ class Daemon(object):
     def __init__(self, device: Device) -> None:
         self.device = device
 
-    def __start(self, f):
+    def _start(f):
         @wraps(f)
-        def wrapped(*args, **kwargs):
+        def wrapped(self, *args, **kwargs):
             self.device.connect()
-            f(*args, **kwargs)
+            f(self, *args, **kwargs)
             while True:
                 time.sleep(5)
 
         return wrapped
 
-    @__start
+    @_start
     def start(self):
         pass
 
