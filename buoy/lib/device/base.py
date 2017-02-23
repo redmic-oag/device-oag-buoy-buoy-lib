@@ -248,7 +248,7 @@ class DeviceDB(object):
 
 
 class Device(object):
-    def __init__(self, **kwargs):
+    def __init__(self, device_name: None, **kwargs):
         # DB
         self.dbname = "boyadb"
         self.username = "boya"
@@ -256,7 +256,7 @@ class Device(object):
         self.__connect_db()
 
         # Device
-        self._dev_name = kwargs.pop('device')
+        self._dev_name = device_name
         self._dev_connection = None
         self._device_conf = DeviceConf(device=self._dev_name)
 
