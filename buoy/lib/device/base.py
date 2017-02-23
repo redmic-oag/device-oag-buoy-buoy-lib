@@ -159,7 +159,7 @@ class DeviceSave(Thread):
 
     def save(self, item):
         """ Guarda en la base de datos """
-        self.db.save(item)
+        self.db.save([item])
 
 
 class DeviceDB(object):
