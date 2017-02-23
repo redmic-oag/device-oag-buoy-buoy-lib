@@ -3,6 +3,7 @@
 import logging
 import time
 import signal
+import sys
 
 from functools import wraps
 from buoy.lib.device.base import Device
@@ -22,11 +23,6 @@ class Daemon(object):
         def wrapped(self, *args, **kwargs):
             self.device.connect()
             f(self, *args, **kwargs)
-            self.status = True
-            while self.status:
-                time.sleep(5)
-
-            logger.info("Stop service")
 
         return wrapped
 
@@ -34,9 +30,13 @@ class Daemon(object):
     def start(self):
         pass
 
+    def is_alive(self):
+        return self.status
+
     def kill(self, signum, frame):
         self.device.disconnect()
         self.status = False
+
 
 
 
