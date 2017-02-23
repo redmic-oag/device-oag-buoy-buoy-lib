@@ -12,6 +12,8 @@ CREATE TABLE acmplus (
     num_attempts SMALLINT default 0
 );
 
+DROP TABLE IF EXISTS pb200;
+
 CREATE TABLE pb200 (
     id BIGSERIAL PRIMARY KEY,
     datetime TIMESTAMP NOT NULL,
