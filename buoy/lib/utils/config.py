@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
 
+import configparser
+import yaml
+import logging
 from os import path
 
-import yaml
+logger = logging.getLogger(__name__)
 
 
-class Config(object):
-    def __init__(self):
-        self.FILENAME_CONFIG = 'buoy.cfg'
-        self.LOCAL_CONFIG_PATH = '../config/'
-        self.GLOBAL_CONFIG_PATH = '/etc/buoy/'
+def load_config_devices(path_config='/etc/buoy/buoy.cfg'):
+    if not path.isfile(path_config):
+        logger.error("No exists config file %s" % (path_config,))
 
-    def filename(self):
-        filename = self.LOCAL_CONFIG_PATH + self.FILENAME_CONFIG
-        if not path.isfile(filename):
-            filename = self.GLOBAL_CONFIG_PATH + self.FILENAME_CONFIG
+    config = configparser.ConfigParser()
+    config.read(path_config)
 
-        return filename
+    return config
 
 
 def load_config_logger(filename, config='/etc/buoy/logging.yaml'):

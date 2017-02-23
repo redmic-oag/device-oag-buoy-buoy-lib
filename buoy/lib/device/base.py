@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import configparser
 import logging
 import time
 from queue import Queue
@@ -13,7 +12,7 @@ from psycopg2.extensions import AsIs
 from psycopg2.extras import DictCursor, DictRow
 
 from typing import List, AnyStr
-from buoy.lib.utils.config import Config
+import buoy.lib.utils.config as configfile
 from buoy.lib.protocol.item import BaseItem
 
 logger = logging.getLogger(__name__)
@@ -21,17 +20,14 @@ logger = logging.getLogger(__name__)
 
 class DeviceConf(object):
     """ Clase para definir la conexión del dispositivo """
-    def __init__(self, **kwargs):
-        self._filename = Config().filename()
-        self._device = kwargs.pop('device')
+    def __init__(self, device=None, **kwargs):
+        self._device = device
         self.SECTION = 'Device - %s' % self._device
 
-        self._read_config()
+        self._read_config(kwargs.pop('path_config', '/etc/buoy/buoy.cfg'))
 
-    def _read_config(self):
-        config = configparser.ConfigParser()
-        config.read(self._filename)
-
+    def _read_config(self, path_config):
+        config = configfile.load_config_devices(path_config)
         self._port = config.get(self.SECTION, 'port')
         self._baudrate = config.getint(self.SECTION, 'baud_rate')
         self._timeout = config.getint(self.SECTION, 'timeout')
@@ -101,18 +97,22 @@ class DeviceReader(Thread):
     def run(self):
         buffer = ''
         while self.device.isOpen:
-            buffer += self.device.read(self.device.inWaiting()).decode()
-            if '\n' in buffer:
-                lines = buffer.split('\n')
-                last_received = lines[-2]
-                buffer = lines[-1]
+            try:
+                buffer += self.device.read(self.device.inWaiting()).decode()
+                if '\n' in buffer:
+                    lines = buffer.split('\n')
+                    last_received = lines[-2]
+                    buffer = lines[-1]
 
-                item = self.parser(last_received)
-                if item:
-                    self.queue_save_data.put_nowait(item)
+                    item = self.parser(last_received)
+                    if item:
+                        self.queue_save_data.put_nowait(item)
 
-                # TODO Cambiar por un log
-                logger.info(last_received)
+                    # TODO Cambiar por un log
+                    logger.info(last_received)
+            except OSError as e:
+                logger.warning("lost connection", e)
+                break
 
     def parser(self, data):
         pass
@@ -258,7 +258,7 @@ class Device(object):
         # Device
         self._dev_name = device_name
         self._dev_connection = None
-        self._device_conf = DeviceConf(device=self._dev_name)
+        self._device_conf = DeviceConf(device=self._dev_name, **kwargs)
 
         self._queue_write_data = Queue()
         self._queue_save_data = Queue()
