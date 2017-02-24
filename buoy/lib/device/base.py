@@ -24,7 +24,7 @@ class DeviceConf(object):
         self._device = device
         self.SECTION = 'Device - %s' % self._device
 
-        self._read_config(kwargs.pop('path_config', '/etc/buoy/buoy.cfg'))
+        self._read_config(kwargs.pop('config_dev_file', '/etc/buoy/buoy.cfg'))
 
     def _read_config(self, path_config):
         config = configfile.load_config_devices(path_config)
