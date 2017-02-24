@@ -111,7 +111,7 @@ class DeviceReader(Thread):
                     # TODO Cambiar por un log
                     logger.info(last_received)
             except (OSError, Exception):
-                logger.info("lost your connection to the device")
+                logger.info("Lost your connection to the device")
                 break
 
     def parser(self, data):
