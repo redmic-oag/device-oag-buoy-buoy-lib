@@ -256,9 +256,9 @@ class Device(object):
         self.__connect_db()
 
         # Device
-        self._dev_name = device_name
+        self.name = device_name
         self._dev_connection = None
-        self._device_conf = DeviceConf(device=self._dev_name, **kwargs)
+        self._device_conf = DeviceConf(device=self.name, **kwargs)
 
         self._queue_write_data = Queue()
         self._queue_save_data = Queue()
@@ -266,7 +266,7 @@ class Device(object):
         # Hilos
         self._thread_reader = DeviceReader()
         self._thread_writer = DeviceWriter()
-        self._thread_save = DeviceSave(tablename_data=self._dev_name, connection_db=self.db)
+        self._thread_save = DeviceSave(tablename_data=self.name, connection_db=self.db)
 
     def __connect_db(self):
         logger.debug("Connecting to database")
