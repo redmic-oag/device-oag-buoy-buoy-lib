@@ -17,8 +17,8 @@ class DaemonException(Exception):
 
 
 class PID(object):
-    def __init__(self, name, **kwargs):
-        self.path_pidfile = kwargs.pop('path_pidfile', '/var/run/')
+    def __init__(self, name, daemon_config):
+        self.path_pidfile = daemon_config['path_pidfile']
         self.pid = str(os.getpid())
         self.name = name
         self.pidfile = os.path.join(self.path_pidfile, name + ".pid")
@@ -36,24 +36,40 @@ class PID(object):
 
 
 class Daemon(object):
-    def __init__(self, device: Device) -> None:
-        self.device = device
+    def __init__(self, name: str, daemon_config) -> None:
         self.status = True
-        self.pidfile = PID(device.name)
-        signal.signal(signal.SIGINT, self.kill)
-        signal.signal(signal.SIGTERM, self.kill)
+        self.pidfile = PID(name, daemon_config)
+        self.pidfile.create()
+
+        signal.signal(signal.SIGINT, self.handler_signal)
+        signal.signal(signal.SIGTERM, self.handler_signal)
+
+    def handler_signal(self, signum, frame):
+        self.status = False
+
+    def before_stop(self):
+        pass
+
+    def stop(self):
+        self.pidfile.remove()
+        os._exit(os.EX_OK)
+
+
+class DaemonDevice(Daemon):
+    def __init__(self, device: Device, daemon_config) -> None:
+        Daemon.__init__(self, device.name, daemon_config)
+        self.device = device
 
     def _start(f):
         @wraps(f)
         def wrapped(self, *args, **kwargs):
-            self.pidfile.create()
             self.device.connect()
             f(self, *args, **kwargs)
-            while self.is_alive():
+            while self.status:
                 time.sleep(2)
 
-            self.pidfile.remove()
-            os._exit(os.EX_OK)
+            self.before_stop()
+            self.stop()
 
         return wrapped
 
@@ -61,13 +77,5 @@ class Daemon(object):
     def start(self):
         pass
 
-    def is_alive(self):
-        return self.status
-
-    def kill(self, signum, frame):
+    def before_stop(self):
         self.device.disconnect()
-        self.status = False
-
-
-
-
