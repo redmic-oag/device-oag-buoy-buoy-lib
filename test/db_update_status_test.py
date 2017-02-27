@@ -64,8 +64,8 @@ class BaseDBUpdateStatusTests(unittest.TestCase):
     def test_update_status_items_in_db(self):
 
         dev_db = DeviceDB(
-            connection_db=db_con,
-            tablename_data=self.db_tablename
+            db_config=db_conf,
+            db_tablename=self.db_tablename
         )
 
         with db_con.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:

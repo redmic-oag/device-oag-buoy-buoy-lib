@@ -59,8 +59,8 @@ class BaseDBTests(unittest.TestCase):
         item_to_insert = self.item_class(**self.data)
 
         dev_db = DeviceDB(
-            connection_db=db_con,
-            tablename_data=self.db_tablename
+            db_config=db_conf,
+            db_tablename=self.db_tablename
         )
 
         dev_db.save([item_to_insert])
