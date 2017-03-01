@@ -57,7 +57,7 @@ class Daemon(object):
 
 class DaemonDevice(Daemon):
     def __init__(self, device: Device, daemon_config) -> None:
-        Daemon.__init__(self, device.name, daemon_config)
+        Daemon.__init__(self, device.name + "_device", daemon_config)
         self.device = device
 
     def _start(f):

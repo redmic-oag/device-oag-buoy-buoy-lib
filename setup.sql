@@ -53,3 +53,9 @@ CREATE TRIGGER acmplus_increment_num_attemps_before_update
 	ON acmplus
 	FOR EACH ROW
 	EXECUTE PROCEDURE increment_num_attempts();
+
+ALTER TABLE acmplus
+  OWNER TO pb200;
+
+ALTER TABLE acmplus
+  OWNER TO acmplus;

@@ -150,18 +150,21 @@ class DeviceDB(object):
 
         return row
 
-    def get_items_to_send(self, size: int=100, offset: int=0) -> List[DictRow]:
+    def get_items_to_send(self, cls, size: int=100, offset: int=0) -> List[DictRow]:
         """ Retorna la lista de registros nuevos a enviar """
         sql = self.cursor.mogrify(self._select_items_to_send_sql, (size, offset))
         self.execute(sql)
         rows = self.cursor.fetchall()
-
-        return rows
+        items = []
+        for row in rows:
+            items.append(cls(**row))
+        return items
 
     def update_status(self, ids: List[int], status=True):
-        sql = self.cursor.mogrify(self._update_status_sql, (status, ids))
-        self.execute(sql)
-        self.connection.commit()
+        if len(ids):
+            sql = self.cursor.mogrify(self._update_status_sql, (status, ids))
+            self.execute(sql)
+            self.connection.commit()
 
     def __create_insert_sql(self, item):
         columns = self.__get_column_names(item)
