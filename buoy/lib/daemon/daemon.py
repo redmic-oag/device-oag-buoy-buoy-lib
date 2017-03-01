@@ -4,7 +4,7 @@ import logging
 import time
 import signal
 import os
-from os.path import isfile
+from os.path import isfile, exists
 
 from functools import wraps
 from buoy.lib.device.base import Device
@@ -22,6 +22,11 @@ class PID(object):
         self.pid = str(os.getpid())
         self.name = name
         self.pidfile = os.path.join(self.path_pidfile, name + ".pid")
+        self.create_path()
+
+    def create_path(self):
+        if not exists(self.path_pidfile):
+            os.makedirs(self.path_pidfile)
 
     def create(self):
         if isfile(self.pidfile):
