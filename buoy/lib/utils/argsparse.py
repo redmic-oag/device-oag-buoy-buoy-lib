@@ -21,5 +21,3 @@ def parse_args():
                         default='/etc/buoy/logging.yaml', type=is_valid_file)
 
     return parser.parse_args()
-
-print("Hola")
