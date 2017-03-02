@@ -135,10 +135,10 @@ class DeviceDB(object):
                     logger.warning("Inserting data already inserted")
                 else:
                     result['fail'].append(item.id)
-                    logger.exception("No insert data", exc_info=True)
+                    logger.exception("No insert data")
             except DatabaseError:
                 result['fail'].append(item.id)
-                logger.exception("No insert data", exec_info=True)
+                logger.exception("No insert data")
 
         return result
 
