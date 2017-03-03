@@ -72,7 +72,7 @@ class DataEncoder(json.JSONEncoder):
         for name in dir(o):
             value = getattr(o, name)
             if type(value) is datetime:
-                serial[name] = value.strftime("%Y-%m-%d %H:%M:%S.%f")
+                serial[name] = value.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
             elif type(value) is Decimal:
                 serial[name] = float(value)
             elif type(value) is int:

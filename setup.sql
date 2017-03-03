@@ -1,8 +1,8 @@
 DROP TABLE IF EXISTS acmplus;
 
-CREATE TABLE acmplus (
+CREATE TABLE acmplus(
     id BIGSERIAL PRIMARY KEY,
-    datetime TIMESTAMP NOT NULL,
+    datetime TIMESTAMP WITH TIME ZONE NOT NULL,
     vx double precision,
     vy double precision,
     speed double precision,
@@ -14,9 +14,9 @@ CREATE TABLE acmplus (
 
 DROP TABLE IF EXISTS pb200;
 
-CREATE TABLE pb200 (
+CREATE TABLE pb200(
     id BIGSERIAL PRIMARY KEY,
-    datetime TIMESTAMP NOT NULL,
+    datetime TIMESTAMP WITH TIME ZONE NOT NULL,
     barometric_pressure_inch double precision,
     barometric_pressure_bar double precision,
     air_temperature double precision,
@@ -54,8 +54,3 @@ CREATE TRIGGER acmplus_increment_num_attemps_before_update
 	FOR EACH ROW
 	EXECUTE PROCEDURE increment_num_attempts();
 
-ALTER TABLE acmplus
-  OWNER TO pb200;
-
-ALTER TABLE acmplus
-  OWNER TO acmplus;

@@ -5,7 +5,7 @@ from nose.tools import eq_, ok_
 
 from buoy.lib.protocol.item import DataEncoder
 from buoy.lib.protocol.nmea0183 import WIMDA
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 import json
 
@@ -14,7 +14,7 @@ class TestProtocolNMEA0183(unittest.TestCase):
     def setUp(self):
         self.data = {
             'id': None,
-            'datetime': datetime.now(),
+            'datetime': datetime.now(tz=timezone.utc),
             'air_temperature': '26.8',
             'barometric_pressure_inch': '30.3273',
             'barometric_pressure_bar': '1.027',

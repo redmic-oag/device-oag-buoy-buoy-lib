@@ -2,7 +2,7 @@ import unittest
 import psycopg2
 import testing.postgresql
 
-from datetime import datetime
+from datetime import datetime, timezone
 from buoy.lib.device.currentmeter.acmplus import ACMPlusItem
 from buoy.lib.protocol.nmea0183 import WIMDA
 from buoy.lib.device.base import DeviceDB
@@ -81,7 +81,7 @@ class TestACMPlus(BaseDBTests):
     item_class = ACMPlusItem
     db_tablename = "acmplus"
     data = {
-            'datetime': datetime.now(),
+            'datetime': datetime.now(tz=timezone.utc),
             'vx': 30.3273,
             'vy': 1.0270,
             'speed': 20.1,
@@ -94,7 +94,7 @@ class TestPB200(unittest.TestCase):
     item_class = WIMDA
     db_tablename = "pb200"
     data = {
-        'datetime': datetime.now(),
+        'datetime': datetime.now(tz=timezone.utc),
         'barometric_pressure_inch': 30.3273,
         'barometric_pressure_bar': 1.0270,
         'air_temperature': 26.8,
