@@ -40,7 +40,7 @@ class BaseItem(object):
     @staticmethod
     def _convert_string_to_decimal(value):
         val = None
-        if value:
+        if value is not None:
             try:
                 val = Decimal(value)
             except InvalidOperation:

@@ -43,7 +43,7 @@ class ACMPlusItem(BaseItem):
     @property
     def speed(self):
         if not self._speed and self.is_fulled:
-            self._speed = math.sqrt(math.pow(self._vx, 2) + math.pow(self._vy, 2))
+            self.speed = math.sqrt(math.pow(self._vx, 2) + math.pow(self._vy, 2))
 
         return self._speed
 

@@ -20,5 +20,18 @@ class TestACMlusItem(unittest.TestCase):
         for key, value in data.items():
             eq_(round(getattr(item, key), 2), round(Decimal(value), 2))
 
+    def test_calculate_properties_value_zero(self):
+        data = {
+            'vx': 0,
+            'vy': 0.79,
+            'speed': 0.79,
+            'direction': 0
+        }
+
+        item = ACMPlusItem(vx=data['vx'], vy=data['vy'])
+
+        for key, value in data.items():
+            eq_(round(getattr(item, key), 2), round(Decimal(value), 2))
+
 if __name__ == '__main__':
     unittest.main()
