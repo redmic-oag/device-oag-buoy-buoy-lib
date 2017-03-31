@@ -47,6 +47,7 @@ class DeviceReader(Thread):
             except (OSError, Exception):
                 logger.info("Lost your connection to the device")
                 break
+            time.sleep(0.5)
 
     def parser(self, data):
         pass
@@ -87,6 +88,7 @@ class DeviceSave(Thread):
         while True:
             item = self.queue_save_data.get()
             self.save(item)
+            time.sleep(0.5)
 
     def save(self, item):
         """ Guarda en la base de datos """
