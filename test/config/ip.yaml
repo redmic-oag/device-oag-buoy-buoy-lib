@@ -1,0 +1,12 @@
+IP:
+    file_current_ip: ./test/config/current_ip.cip
+    my_public_ip_services: ["http://icanhazip.com", "http://ipv4bot.whatismyipaddress.com", "https://api.ipify1.org", "http://ip.42.pl/raw"]
+
+Hover:
+    url: "https://www.hover.com/api/"
+    credentials:
+        username: oagfundacioncom
+        password: xGC694rYN6g89=
+
+    DNS:
+        id: dns/dns13596172

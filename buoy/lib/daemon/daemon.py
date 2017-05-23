@@ -6,10 +6,17 @@ import signal
 import os
 from os.path import isfile, exists
 
-from functools import wraps
 from buoy.lib.device.base import Device
 
 logger = logging.getLogger(__name__)
+
+
+def get_config(device_name, buoy_config):
+    serial_config = buoy_config['device'][device_name]['serial']
+    db_config = buoy_config['database']
+    service_config = buoy_config['service']
+
+    return serial_config, db_config, service_config
 
 
 class DaemonException(Exception):
@@ -42,22 +49,51 @@ class PID(object):
 
 class Daemon(object):
     def __init__(self, name: str, daemon_config) -> None:
-        self.status = True
+        self.active = False
         self.pidfile = PID(name, daemon_config)
-        self.pidfile.create()
 
         signal.signal(signal.SIGINT, self.handler_signal)
         signal.signal(signal.SIGTERM, self.handler_signal)
 
     def handler_signal(self, signum, frame):
-        self.status = False
+        self.active = False
 
-    def before_stop(self):
+    def _before_start(self):
+        self.active = True
+        self.pidfile.create()
+        self.before_start()
+
+    def before_start(self):
+        """ Función que se ejecuta antes de iniciar el servicio """
         pass
 
-    def stop(self):
+    def start(self):
+        self._before_start()
+        self.run()
+        self._stop()
+
+    def run(self):
+        """ Función donde implementar la lógica del servicio """
+        pass
+
+    def _before_stop(self):
+        self.before_stop()
+
+    def before_stop(self):
+        """ Función que se ejecuta antes de parar el servicio """
+        pass
+
+    def _stop(self, code=os.EX_OK):
+        self.active = False
+        self._before_stop()
         self.pidfile.remove()
-        os._exit(os.EX_OK)
+        os._exit(code)
+
+    def stop(self):
+        self._stop()
+
+    def error(self):
+        self._stop(os.EX_OSERR)
 
 
 class DaemonDevice(Daemon):
@@ -65,22 +101,21 @@ class DaemonDevice(Daemon):
         Daemon.__init__(self, device.name + "_device", daemon_config)
         self.device = device
 
-    def _start(f):
-        @wraps(f)
-        def wrapped(self, *args, **kwargs):
-            self.device.connect()
-            f(self, *args, **kwargs)
-            while self.status:
-                time.sleep(2)
+    def before_start(self):
+        self.connect()
+        self.configure()
 
-            self.before_stop()
-            self.stop()
+    def connect(self):
+        self.device.connect()
 
-        return wrapped
-
-    @_start
-    def start(self):
+    def configure(self):
         pass
+
+    def run(self):
+        while self.active:
+            time.sleep(2)
 
     def before_stop(self):
         self.device.disconnect()
+
+
