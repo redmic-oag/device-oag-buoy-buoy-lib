@@ -11,7 +11,9 @@ def load_config(path_config):
     if not path.isfile(path_config):
         logger.error("No exists config file %s" % (path_config,))
 
-    config = yaml.load(open(path_config, 'r'))
+    f = open(path_config, 'r')
+    config = yaml.load(f)
+    f.close()
 
     return config
 
