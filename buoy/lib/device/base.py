@@ -17,6 +17,10 @@ from buoy.lib.protocol.item import BaseItem
 logger = logging.getLogger(__name__)
 
 
+class ConnectionException(Exception):
+    pass
+
+
 class DeviceReader(Thread):
     """ Clase encargada de leer y parsear los datos que devuelve el dispositivo """
     def __init__(self):
@@ -37,16 +41,19 @@ class DeviceReader(Thread):
                 if '\n' in buffer:
                     lines = buffer.split('\n')
                     last_received = lines[-2]
-                    buffer = lines[-1]
+                    buffer = ''
 
                     item = self.parser(last_received)
                     if item:
                         self.queue_save_data.put_nowait(item)
+                        logger.info("Received data - " + last_received)
+                    else:
+                        logger.info("Received - " + '\n'.join(lines))
 
-                    logger.info(last_received)
             except (OSError, Exception):
                 logger.info("Lost your connection to the device")
-                break
+                raise ConnectionException
+
             time.sleep(0.5)
 
     def parser(self, data):
@@ -70,6 +77,7 @@ class DeviceWriter(Thread):
         while self.device.isOpen:
             data = self.queue_write_data.get()
             self.device.write(data.encode())
+            logger.info("Send - " + data)
             time.sleep(1)
 
 
