@@ -39,9 +39,8 @@ class PID(object):
         if isfile(self.pidfile):
             raise DaemonException()
 
-        f = open(self.pidfile, 'w')
-        f.write(self.pid)
-        f.close()
+        with open(self.pidfile, 'w') as f:
+            f.write(self.pid)
 
     def remove(self):
         os.remove(self.pidfile)
