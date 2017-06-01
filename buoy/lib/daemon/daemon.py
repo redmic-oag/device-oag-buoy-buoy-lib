@@ -96,8 +96,8 @@ class Daemon(object):
 
 
 class DaemonDevice(Daemon):
-    def __init__(self, device: Device, daemon_config) -> None:
-        Daemon.__init__(self, device.name + "_device", daemon_config)
+    def __init__(self, device: Device, service_name: str, daemon_config) -> None:
+        Daemon.__init__(self, service_name, daemon_config)
         self.device = device
 
     def before_start(self):
