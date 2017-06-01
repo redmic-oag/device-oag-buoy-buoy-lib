@@ -24,11 +24,11 @@ class DaemonException(Exception):
 
 
 class PID(object):
-    def __init__(self, name, daemon_config):
+    def __init__(self, daemon_name, daemon_config):
         self.path_pidfile = daemon_config['path_pidfile']
         self.pid = str(os.getpid())
-        self.name = name
-        self.pidfile = os.path.join(self.path_pidfile, name + ".pid")
+        self.name = daemon_name
+        self.pidfile = os.path.join(self.path_pidfile, self.name + ".pid")
         self.create_path()
 
     def create_path(self):
@@ -47,9 +47,9 @@ class PID(object):
 
 
 class Daemon(object):
-    def __init__(self, name: str, daemon_config) -> None:
+    def __init__(self, daemon_name: str, daemon_config) -> None:
         self.active = False
-        self.pidfile = PID(name, daemon_config)
+        self.pidfile = PID(daemon_name, daemon_config)
 
         signal.signal(signal.SIGINT, self.handler_signal)
         signal.signal(signal.SIGTERM, self.handler_signal)
@@ -96,8 +96,8 @@ class Daemon(object):
 
 
 class DaemonDevice(Daemon):
-    def __init__(self, device: Device, service_name: str, daemon_config) -> None:
-        Daemon.__init__(self, service_name, daemon_config)
+    def __init__(self, device: Device, daemon_name: str, daemon_config) -> None:
+        Daemon.__init__(self, daemon_name, daemon_config)
         self.device = device
 
     def before_start(self):
