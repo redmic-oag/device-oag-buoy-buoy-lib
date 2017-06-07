@@ -6,7 +6,7 @@ import signal
 import os
 from os.path import isfile, exists
 
-from buoy.lib.device.base import Device
+from buoy.lib.device.base import Device, ConnectionException
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class PID(object):
 
     def create(self):
         if isfile(self.pidfile):
-            raise DaemonException()
+            os.remove(self.pidfile)
 
         with open(self.pidfile, 'w') as f:
             f.write(self.pid)
@@ -101,8 +101,11 @@ class DaemonDevice(Daemon):
         self.device = device
 
     def before_start(self):
-        self.connect()
-        self.configure()
+        try:
+            self.connect()
+            self.configure()
+        except ConnectionException:
+            self.error()
 
     def connect(self):
         self.device.connect()
