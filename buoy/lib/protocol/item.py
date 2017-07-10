@@ -35,6 +35,9 @@ class BaseItem(object):
 
     @datetime.setter
     def datetime(self, value):
+        if type(value) is int:
+            value = datetime.fromtimestamp(value/1000.0)
+
         self._datetime = value
 
     @staticmethod
@@ -65,22 +68,36 @@ class BaseItem(object):
             return dict(self) == dict(other)
         return False
 
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.datetime < other.datetime
+
+    def __str__(self):
+        line = ''
+        for name in dir(self):
+            line += '%s: %s | ' % (name, getattr(self, name))
+
 
 class DataEncoder(json.JSONEncoder):
     def default(self, o):
         serial = {}
         for name in dir(o):
             value = getattr(o, name)
-            if type(value) is datetime:
+            datatype = type(value)
+            if datatype is datetime:
                 serial[name] = value.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
-            elif type(value) is Decimal:
+            elif datatype is Decimal:
                 serial[name] = float(value)
-            elif type(value) is int:
+            elif datatype is int:
                 serial[name] = value
+            elif datatype is str:
+                serial[name] = value
+            elif isinstance(value, BaseItem):
+                serial[name] = self.default(value)
             elif value:
                 try:
                     serial[name] = json.JSONEncoder.default(self, value)
-                except TypeError:
+                except TypeError as e:
                     logger.error("No serialize property %s with value %s" % (name, value,))
 
         return serial

@@ -14,7 +14,7 @@ class TestProtocolNMEA0183(unittest.TestCase):
     def setUp(self):
         self.data = {
             'id': None,
-            'datetime': datetime.now(tz=timezone.utc),
+            'datetime': datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f%z"),
             'air_temperature': '26.8',
             'barometric_pressure_inch': '30.3273',
             'barometric_pressure_bar': '1.027',
@@ -80,6 +80,8 @@ class TestProtocolNMEA0183(unittest.TestCase):
         
     def test_wimda_serialize(self):
         serial = json.dumps(self.item_expected, cls=DataEncoder, sort_keys=True)
+
+        testo = str(self.item_expected)
 
         json_expected = ('"absolute_humidity": {absolute_humidity}, '
                          '"air_temperature": {air_temperature}, '

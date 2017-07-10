@@ -13,15 +13,15 @@ db_con = None
 db_conf = None
 
 
-class BaseDBGetItemsTests(unittest.TestCase):
+class BaseDBUpdateStatusTests(unittest.TestCase):
     item_class = None
     db_tablename = None
 
     @classmethod
     def setUpClass(cls):
-        if cls is BaseDBGetItemsTests:
+        if cls is BaseDBUpdateStatusTests:
             raise unittest.SkipTest("Skip BaseTest tests, it's a base class")
-        super(BaseDBGetItemsTests, cls).setUpClass()
+        super(BaseDBUpdateStatusTests, cls).setUpClass()
 
     def setUp(self):
         """ Module level set-up called once before any tests in this file are executed. Creates a temporary database
@@ -46,7 +46,7 @@ class BaseDBGetItemsTests(unittest.TestCase):
             # basically anything that doesn't change
             cur.execute(lines_str)
 
-        with open('test/data_example.sql', 'r') as fh:
+        with open('test/support/data/data_example.sql', 'r') as fh:
             lines_str = fh.read()
 
         with db_con.cursor() as cur:
@@ -61,28 +61,36 @@ class BaseDBGetItemsTests(unittest.TestCase):
         db_con.close()
         db.stop()
 
-    def test_get_items_in_db(self):
+    def test_update_status_items_in_db(self):
 
         dev_db = DeviceDB(
             db_config=db_conf,
             db_tablename=self.db_tablename
         )
 
-        rows = dev_db.get_items_to_send()
-        items = []
-        for row in rows:
-            items.append(self.item_class(**row))
+        with db_con.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("""SELECT * FROM %s ORDER BY id""" % (self.db_tablename,))
+            before_rows = cur.fetchall()
 
-        eq_(len(rows), 15)
-        ok_(all(a.id <= b.id for a, b in zip(items[:-1], items[1:])))
+        ids = list(range(1, 22))
+        dev_db.update_status(ids)
+
+        with db_con.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("""SELECT * FROM %s ORDER BY id""" % (self.db_tablename,))
+            after_rows = cur.fetchall()
+
+        for idx, aft_row in enumerate(after_rows):
+            eq_(aft_row['sended'], True)
+            ok_(aft_row['id'] == before_rows[idx]['id'])
+            ok_(aft_row['num_attempts'] > before_rows[idx]['num_attempts'])
 
 
-class TestACMPlus(BaseDBGetItemsTests):
+class TestACMPlus(BaseDBUpdateStatusTests):
     item_class = ACMPlusItem
     db_tablename = "acmplus"
 
 
-class TestPB200(BaseDBGetItemsTests):
+class TestPB200(BaseDBUpdateStatusTests):
     item_class = WIMDA
     db_tablename = "pb200"
 

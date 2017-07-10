@@ -6,12 +6,14 @@ from datetime import datetime, timezone
 from buoy.lib.device.currentmeter.acmplus import ACMPlusItem
 from buoy.lib.protocol.nmea0183 import WIMDA
 from buoy.lib.device.base import DeviceDB
+from buoy.lib.notification.common import Notification, NotificationLevel
 
 from nose.tools import eq_
 
 db = None
 db_con = None
 db_conf = None
+skip_test = False
 
 
 class BaseDBTests(unittest.TestCase):
@@ -20,15 +22,22 @@ class BaseDBTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        global skip_test
         if cls is BaseDBTests:
-            raise unittest.SkipTest("Skip BaseTest tests, it's a base class")
+            skip_test = True
+        else:
+            skip_test = False
         super(BaseDBTests, cls).setUpClass()
 
     def setUp(self):
         """ Module level set-up called once before any tests in this file are executed. Creates a temporary database
         and sets it up """
 
-        global db, db_con, db_conf
+        global db, db_con, db_conf, skip_test
+
+        if skip_test:
+            self.skipTest("Skip BaseTest tests, it's a base class")
+
         db = testing.postgresql.Postgresql()
         # Get a map of connection parameters for the database which can be passed
         # to the functions being tested so that they connect to the correct
@@ -63,7 +72,7 @@ class BaseDBTests(unittest.TestCase):
             db_tablename=self.db_tablename
         )
 
-        dev_db.save([item_to_insert])
+        item = dev_db.save(item_to_insert)
 
         with db_con.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             cur.execute("""SELECT * FROM %s""" % (self.db_tablename,))
@@ -74,7 +83,7 @@ class BaseDBTests(unittest.TestCase):
             for key, value in self.data.items():
                 eq_(row[key], value)
 
-            eq_(row['id'], 1)
+            eq_(row['id'], item.id)
 
 
 class TestACMPlus(BaseDBTests):
@@ -90,7 +99,7 @@ class TestACMPlus(BaseDBTests):
         }
 
 
-class TestPB200(unittest.TestCase):
+class TestPB200(BaseDBTests):
     item_class = WIMDA
     db_tablename = "pb200"
     data = {
@@ -108,6 +117,16 @@ class TestPB200(unittest.TestCase):
         'wind_speed_meters': 0.3
     }
 
+
+class TestNotification(BaseDBTests):
+    item_class = Notification
+    db_tablename = "notification"
+    data = {
+        'datetime': datetime.now(tz=timezone.utc),
+        'phone': "+34660045155",
+        'level': NotificationLevel.CRITICAL,
+        'message': "rebooted computer"
+    }
 
 if __name__ == '__main__':
     unittest.main()

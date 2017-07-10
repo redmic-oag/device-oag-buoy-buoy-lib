@@ -54,3 +54,17 @@ CREATE TRIGGER acmplus_increment_num_attemps_before_update
 	FOR EACH ROW
 	EXECUTE PROCEDURE increment_num_attempts();
 
+
+DROP TABLE IF EXISTS notification;
+
+CREATE TABLE notification(
+    id BIGSERIAL PRIMARY KEY,
+    datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+    level smallint NOT NULL,
+    type smallint NOT NULL,
+    phone CHARACTER VARYING(15),
+    message CHARACTER VARYING(250) NOT NULL,
+    sended BOOLEAN DEFAULT FALSE,
+    num_attempts SMALLINT default 0
+);
+
