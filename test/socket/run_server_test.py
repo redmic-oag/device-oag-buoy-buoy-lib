@@ -1,12 +1,12 @@
 import unittest
 
-from buoy.lib.notification.server import Notification
+from buoy.lib.notification.server import NotificationServer
 
 
 class TestConsoleCLI(unittest.TestCase):
 
     def test_run_weather_station(self):
-        Notification()
+        NotificationServer()
 
 
 if __name__ == '__main__':

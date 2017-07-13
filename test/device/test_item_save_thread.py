@@ -6,7 +6,7 @@ from unittest.mock import patch, Mock, call
 from datetime import datetime, timezone
 from queue import Queue
 from buoy.lib.device.base import ItemSaveThread
-from buoy.lib.notification.client import NoticeQueue
+from buoy.lib.notification.client.common import NoticeQueue
 from buoy.lib.notification.common import NoticeType
 from buoy.lib.protocol.nmea0183 import WIMDA
 

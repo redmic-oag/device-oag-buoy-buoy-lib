@@ -6,64 +6,43 @@ import json
 from nose.tools import eq_
 from unittest.mock import patch, MagicMock
 
-from buoy.lib.notification.client.common import NotificationNamespaceClient, NoticeQueue
-from buoy.lib.notification.common import Notification, NotificationLevel, NoticeType
+from buoy.lib.notification.server import NotificationNamespace, NotificationDB
+from buoy.lib.notification.common import Notification, NotificationLevel
 from buoy.lib.protocol.item import DataEncoder
 
 
-class AlmostAlwaysTrue(object):
-    def __init__(self, total_iterations=1):
-        self.total_iterations = total_iterations
-        self.current_iteration = 0
-
-    def __nonzero__(self):
-        if self.current_iteration < self.total_iterations:
-            self.current_iteration += 1
-            return bool(1)
-        return bool(0)
-
-    # Python >= 3
-    def __bool__(self):
-        if self.current_iteration < self.total_iterations:
-            self.current_iteration += 1
-            return bool(1)
-        return bool(0)
-
-
-class FakeIO(object):
+class FakeNotificationDB(NotificationDB):
     def __init__(self):
-        self._url = 'http://redmic.es'
-        self.queue_notice = NoticeQueue()
-        self.level_notification = [NotificationLevel.CRITICAL]
+        pass
 
 
 class TestNotificationNamespaceServer(unittest.TestCase):
 
     def setUp(self):
-        self.io = FakeIO()
-        self.queue = self.io.queue_notice.queue_type(NoticeType.NOTIFICATION)
-        self.device_id = "PB200"
-        self.namespace = NotificationNamespaceClient(self.io, '/data')
-        self.namespace.device_id = self.device_id
+        self.db_config = {
+            'database': 'boyadb',
+            'user': 'boya',
+            'password': 'b0y4_04G',
+            'host': '127.0.0.1'
+        }
 
-    @patch('buoy.lib.notification.client.NotificationNamespaceClient.emit')
-    def test_should_emitEventNewNotification_when_addNotificationCritical(self, mock_emit):
-        self.namespace.active = MagicMock(return_value=AlmostAlwaysTrue(1))
-        item = Notification(level=NotificationLevel.CRITICAL, message="Hola", phone="1234")
-        json_expected = json.dumps(item, sort_keys=True, cls=DataEncoder)
+    @patch('buoy.lib.notification.server.NotificationDB')
+    @patch('buoy.lib.notification.server.emit')
+    def test_should_emitEventSendNotification_when_receivedNewNotification(self, mock_emit, mock_db):
+        data = {
+            'level': NotificationLevel.CRITICAL,
+            'message': "Hola",
+            'phone': "1234",
+            'daemon': 'sms-cli'
+        }
 
-        self.queue.put_nowait(item)
-        self.namespace.on_connect()
+        notification = Notification(**data)
+        mock_db.save = MagicMock(return_value=notification)
+        namespace = NotificationNamespace(namespace="/notification", db_config=self.db_config)
+
+        json_expected = json.dumps(notification, sort_keys=True, cls=DataEncoder)
+        namespace.on_new_notification(json_expected)
 
         eq_(mock_emit.call_count, 1)
-        mock_emit.assert_called_once_with("new_notification", json_expected)
+        mock_emit.assert_called_once_with("send_notification", json_expected)
 
-    @patch('buoy.lib.notification.client.NotificationNamespaceClient.emit')
-    def test_should_noEmitEventNewNotification_when_addNotificationCritical(self, mock_emit):
-        self.namespace.is_active = MagicMock(return_value=AlmostAlwaysTrue(1))
-        item = Notification(level=NotificationLevel.NORMAL, message="Hola", phone="1234")
-
-        self.queue.put_nowait(item)
-        self.namespace.on_connect()
-
-        eq_(mock_emit.call_count, 0)

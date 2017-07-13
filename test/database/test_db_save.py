@@ -125,7 +125,8 @@ class TestNotification(BaseDBTests):
         'datetime': datetime.now(tz=timezone.utc),
         'phone': "+34660045155",
         'level': NotificationLevel.CRITICAL,
-        'message': "rebooted computer"
+        'message': "rebooted computer",
+        'daemon': "Prueba"
     }
 
 if __name__ == '__main__':

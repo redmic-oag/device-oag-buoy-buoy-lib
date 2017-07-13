@@ -60,6 +60,7 @@ DROP TABLE IF EXISTS notification;
 CREATE TABLE notification(
     id BIGSERIAL PRIMARY KEY,
     datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+    daemon CHARACTER VARYING(30),
     level smallint NOT NULL,
     type smallint NOT NULL,
     phone CHARACTER VARYING(15),

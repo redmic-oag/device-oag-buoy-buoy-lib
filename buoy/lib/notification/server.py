@@ -2,15 +2,12 @@
 
 import logging
 import json
-import string
-import random
-
 
 from datetime import time
 
 from flask import Flask
 from flask_socketio import SocketIO
-from flask_socketio import Namespace, emit, send
+from flask_socketio import Namespace, emit
 
 from psycopg2.extras import DictRow
 from psycopg2 import DatabaseError
@@ -19,8 +16,8 @@ from threading import Thread
 from typing import List
 from buoy.lib.protocol.item import DataEncoder
 from buoy.lib.device.base import DeviceDB
-from buoy.lib.notification.common import NoticeData, NotificationLevel
-from buoy.lib.notification.common import Notification as NotificationItem
+from buoy.lib.notification.common import NotificationLevel, Notification, BaseItem
+
 
 #logger = logging.getLogger(__name__)
 logger = logging.basicConfig(filename='example.log', level=logging.DEBUG)
@@ -37,25 +34,16 @@ class NotificationDB(DeviceDB):
 
     def get_items_to_send(self, cls, size: int=100, offset: int=0, level: NotificationLevel=NotificationLevel.LOW) \
             -> List[DictRow]:
-        """ Retorna la lista de registros nuevos a enviar """
+        return super(NotificationDB, self).__get_items_to_send(cls, (size, offset, level, ))
 
-        sql = self.cursor.mogrify(self._select_items_to_send_sql, (size, offset, level))
-        self.execute(sql)
-        rows = self.cursor.fetchall()
-        items = []
-        for row in rows:
-            items.append(cls(**row))
-        return items
-
-    def save(self, items: List):
+    def save(self, items: List) -> List[BaseItem]:
         """ Inserta un nuevo registro en la base de datos """
+        notifications = []
         for item in items:
-            try:
-                sql = self.create_insert_sql(item)
-                self.cursor.execute(sql)
-            except DatabaseError as e:
-                logger.exception("No insert data")
-            self.connection.commit()
+            notification = super(NotificationDB, self).save(item)
+            notifications.append(notification)
+
+        return notifications
 
 
 class NotificationNamespace(Namespace):
@@ -65,29 +53,22 @@ class NotificationNamespace(Namespace):
         self.db = NotificationDB(db_config=db_config, db_tablename="notification")
 
     def on_connect(self):
-        """ Cuando se conecta un cliente pide las notificaciones pendientes """
-        logger.info("Connected")
-        emit("get_notifications")
+        pass
 
     def on_disconnect(self):
         pass
 
-    def on_get_notifications(self, data):
-        notificacions = self.db.get_items_to_send()
-        for notification in notificacions:
-            json_to_send = json.dumps(notification, sort_keys=True, cls=DataEncoder)
-            emit("new_notification", json_to_send)
-
     def on_new_notification(self, data):
-        """ Recibe las notificaciones de los clientes """
-        logger.info("New Notification")
-
+        """
+        Recibe las notificaciones de los clientes y l
+        :param data:
+        :return:
+        """
         notification = self.json_to_notification(data)
-        self.db.save([notification])
+        self.db.save(notification)
         json_to_send = json.dumps(notification, sort_keys=True, cls=DataEncoder)
 
-        emit("notification_received")
-        emit("new_notification", json_to_send, broadcast=True)
+        emit("send_notification", json_to_send)
 
     def on_sended_notification(self, data):
         """ Envía la confirmación del envío de las notificaciones """
@@ -97,7 +78,7 @@ class NotificationNamespace(Namespace):
     @staticmethod
     def json_to_notification(data):
         a = json.loads(data)
-        return NotificationItem(**a)
+        return Notification(**a)
 
 
 class DataNamespace(Namespace):
@@ -106,9 +87,7 @@ class DataNamespace(Namespace):
         self.clients = []
 
     def on_connect(self):
-        """ Cuando se conecta un dispositivo """
-#        logger.info("Connected - Emit 'sended_data'")
-
+        pass
 
     def on_disconnect(self):
         pass
@@ -125,9 +104,8 @@ class DataNamespace(Namespace):
 #        emit("new_data", json_to_send, broadcast=True)
         emit("sended_data", json_to_send)
 
-    def on_add_device(self, device_id):
-        self.clients.append(device_id)
-        emit("sender_status", True)
+    def on_add_device(self, data):
+        emit("sender_status", "true")
 
 #    def on_sended_data(self, items_ok, items_error):
 #        self.emit("sended_data", items_ok, items_error)
@@ -145,18 +123,18 @@ class NotificationThread(Thread):
             'password': 'b0y4_04G',
             'host': '127.0.0.1'
         }
-        #self.socketio.on_namespace(NotificationNamespace('/notifications', db_config=db_config))
+        self.socketio.on_namespace(NotificationNamespace('/notifications', db_config=db_config))
         self.socketio.on_namespace(DataNamespace('/data'))
 
     def run(self):
         self.socketio.run(self.app)
 
 
-class Notification(object):
+class NotificationServer(object):
     def __init__(self):
         self._notification_thread = NotificationThread()
         self._notification_thread.start()
 
 
 if __name__ == "__main__":
-    Notification()
+    NotificationServer()

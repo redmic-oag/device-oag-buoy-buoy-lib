@@ -108,6 +108,7 @@ class Daemon(object):
         self.send_notification(Notification(message="Stop service %s" % self.daemon_name,
                                             level=NotificationLevel.HIGHT))
 
+        time.sleep(10)
         self.active = False
         self._before_stop()
         self.pidfile.remove()

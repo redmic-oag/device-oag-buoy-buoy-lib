@@ -8,7 +8,7 @@ from threading import Thread
 from serial import Serial, SerialException
 
 from buoy.lib.notification.common import Notification, NotificationLevel, NoticeData, NoticeBase
-from buoy.lib.notification.client import NoticeQueue
+from buoy.lib.notification.client.device import NoticeQueue
 from buoy.lib.device.exceptions import LostConnectionException, DeviceNoDetectedException
 from buoy.lib.device.database import DeviceDB
 
@@ -182,5 +182,5 @@ class Device(object):
     def write(self, data):
         self.queues['write_data'].put_nowait(data + "\r")
 
-    def send_notification(self, item: NoticeBase):
-        logger.info(item.message)
+    def send_notification(self, notification: NoticeBase):
+        logger.info(notification.message)

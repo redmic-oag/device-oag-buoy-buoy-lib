@@ -26,10 +26,11 @@ class NotificationLevel(IntEnum):
 
 
 class NoticeBase(BaseItem):
-    def __init__(self, notice_type: NoticeType, **kwargs):
+    def __init__(self, notice_type: NoticeType, daemon: str, **kwargs):
         super().__init__(**kwargs)
         self.level = kwargs.pop('level', NotificationLevel.NORMAL)
         self.datetime = kwargs.pop('datetime', datetime.now(tz=timezone.utc))
+        self.daemon = daemon
         self.type = notice_type
 
     @property
@@ -61,6 +62,14 @@ class NoticeBase(BaseItem):
             value = value.value
 
         self._type = value
+
+    @property
+    def daemon(self):
+        return self._daemon
+
+    @daemon.setter
+    def daemon(self, value):
+        self._daemon = value
 
     def __str__(self):
         return "{datetime} - {level} - {type}".format(**dict(self))
