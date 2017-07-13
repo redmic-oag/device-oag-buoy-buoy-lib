@@ -11,7 +11,7 @@ from socketIO_client import SocketIO, BaseNamespace
 
 from buoy.lib.device.database import DeviceDB
 from buoy.lib.notification.common import NoticeBase, NotificationLevel, NoticeType
-from buoy.lib.notification.common import Notification as NotificationItem
+from buoy.lib.notification.common import Notification
 from buoy.lib.sender.sender import Sender
 from buoy.lib.protocol.item import DataEncoder, BaseItem
 
@@ -119,6 +119,40 @@ class DataSenderNamespaceClient(BaseNamespace, Sender):
         self.active = False
 
 
+class WaitNoticeThread(Thread):
+    def __init__(self, queue_data: NoticeQueue, db: DeviceDB, cls, emit):
+        Thread.__init__(self)
+        self.db = db
+        self.cls = cls
+        self.queue_data = queue_data
+        self.emit = emit
+
+    def run(self):
+        """
+        Envía los datos al servidor de notificaciones
+        :return:
+        """
+        items = self.waiting_data()
+        json_to_send = json.dumps(items, sort_keys=True, cls=DataEncoder)
+
+        self.emit("new_data", json_to_send)
+
+    def waiting_data(self) -> List[BaseItem]:
+        """
+        Espera por los datos, si existen datos en la base de datos tienen preferencia
+        a las que envía el dispositivo
+
+        :return Retorna una lista de datos
+        :rtype Lista de tipo BaseItem
+        """
+        items = self.db.get_items_to_send(self.cls)
+        if not len(items):
+            notice = self.queue_data.get()
+            items = [notice.data]
+
+        return items
+
+
 class DataDeviceNamespaceClient(BaseNamespace):
     """
         Clase encargada de conectarse son el servidor de notificaciones
@@ -127,11 +161,12 @@ class DataDeviceNamespaceClient(BaseNamespace):
     def __init__(self, io, path):
         super(DataDeviceNamespaceClient, self).__init__(io, path)
         self.queue_data = io.queue_notice.queue_type(NoticeType.DATA)
-        self._db = io.db
-        self._cls = io.cls
+        self.db = io.db
+        self.cls = io.cls
         self._sender_up = False
         self._sender_busy = False
         self.device_id = "PB200"
+        self.thread_wait_data = None
 
     @property
     def sender_busy(self):
@@ -208,58 +243,83 @@ class DataDeviceNamespaceClient(BaseNamespace):
             ids = []
             for item in items:
                 ids.append(item['id'])
-            self._db.update_status(ids, status)
+            self.db.update_status(ids, status)
 
     def send_data(self):
+        self.sender_busy = True
+        self.thread_wait_data = WaitNoticeThread(db=self.db, queue_data=self.queue_data, cls=self.cls, emit=self.emit)
+        self.thread_wait_data.start()
+
+
+class WaitNotificationThread(Thread):
+    def __init__(self, queue_notification: NoticeQueue, level_notification, emit):
+        Thread.__init__(self)
+        self.queue_notification = queue_notification
+        self.level_notification = level_notification
+        self.emit = emit
+
+    def run(self):
         """
         Envía los datos al servidor de notificaciones
         :return:
         """
-        self.sender_busy = True
-        items = self.waiting_data()
-        json_to_send = json.dumps(items, sort_keys=True, cls=DataEncoder)
-
-        self.emit("new_data", json_to_send)
-
-    def waiting_data(self) -> List[BaseItem]:
-        """
-        Espera por los datos, si existen datos en la base de datos tienen preferencia
-        a las que envía el dispositivo
-
-        :return Retorna una lista de datos
-        :rtype Lista de tipo BaseItem
-        """
-        items = self._db.get_items_to_send(self._cls)
-        if not len(items):
-            notice = self.queue_data.get()
-            items = [notice.data]
-
-        return items
-
-
-class NotificationNamespaceClient(BaseNamespace):
-    def __init__(self, io, path):
-        super(NotificationNamespaceClient, self).__init__(io, path)
-        self.queue_notification = io.queue_notice.queue_type(NoticeType.NOTIFICATION)
-        self.level_notification = io.level_notification
-        self._active = True
-
-    def on_connect(self):
-        while self.is_active():
+        while True:
             item = self.queue_notification.get()
+            if not item:
+                break
             self.send_notification(item)
             self.queue_notification.task_done()
 
     def send_notification(self, notice: NoticeBase):
+        """
+        Envía la notificación al servidor, serializada en formato JSON
+        :param notice: Notificación a enviar
+        :return:
+        """
         json_item = json.dumps(notice, sort_keys=True, cls=DataEncoder)
         if self.need_notification(notice):
             self.emit("new_notification", json_item)
 
-    def is_active(self):
-        return self._active
-
-    def need_notification(self, notice: NotificationItem):
+    def need_notification(self, notice: Notification) -> bool:
+        """
+        Comprueba si la notificación necesita ser enviada al centro de
+        notificaciones, dependiendo del nivel de la notificación
+        :param notice: Notificación a comprobar
+        :return: Si se envío o no (True|False)
+        """
         return notice.level in self.level_notification
+
+
+class NotificationNamespaceClient(BaseNamespace):
+    """
+    Permite el envío de notificaciones desde los clientes, se encarga
+    de recibir los notificaciones a través de una cola y enviarlas
+    al centro de notificaciones
+    """
+    def __init__(self, io, path):
+        super(NotificationNamespaceClient, self).__init__(io, path)
+        self.queue_notification = io.queue_notice.queue_type(NoticeType.NOTIFICATION)
+        self.level_notification = io.level_notification
+        self.thread_wait_notification = None
+
+    def on_disconnect(self):
+        """
+        Cuando se desconecta el socket, se marca como inactivo, para
+        evitar el envío de notificaciones al servidor
+        :return:
+        """
+        self.queue_notification.put_nowait(None)
+
+    def on_connect(self):
+        """
+        Activa el envío de notificaciones al servidor una vez se halla
+        establecido la comunicación a través del socket
+        :return:
+        """
+        self.thread_wait_notification = WaitNotificationThread(queue_notification=self.queue_notification,
+                                                               level_notification=self.level_notification,
+                                                               emit=self.emit)
+        self.thread_wait_notification.start()
 
 
 class NotificationThread(Thread):
@@ -283,16 +343,18 @@ class NotificationThread(Thread):
         self.socket.cls = self.cls
         self.data_namespace = self.socket.define(DataDeviceNamespaceClient, '/data')
         self.notification_namespace = self.socket.define(NotificationNamespaceClient, '/notifications')
-        self.socket.wait()
+
+        while True:
+            pass
 
 
-class Notification(object):
+class NotificationClient(object):
     def __init__(self, db, cls):
         self.queues = {'notice': NoticeQueue()}
 
         self._notification_thread = NotificationThread(queue_notice=self.queues['notice'], db=db, cls=cls)
         self._notification_thread.start()
 
-    def send_notification(self, item: NoticeBase):
-        logger.info(str(item))
-        self.queues['notice'].put_nowait(item)
+    def send_notification(self, notification: NoticeBase):
+        logger.info(str(notification))
+        self.queues['notice'].put_nowait(notification)

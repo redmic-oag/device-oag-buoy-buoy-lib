@@ -56,7 +56,7 @@ class TestDataSenderNamespaceClient(unittest.TestCase):
 
         self.assertRaises(ErrorSendDataToServerException, sender.send_data, self.url, self.item)
 
-    @patch('buoy.lib.notification.client.BaseNamespace.emit')
+    @patch.object('buoy.lib.notification.client.BaseNamespace.emit')
     @patch('buoy.lib.sender.sender.Sender.send_data', return_value=True)
     def test_should_called_once_method_send_data_when_event_on_new_data_is_received(self, mock_send_data, mock_emit):
         class FakeIO(object):

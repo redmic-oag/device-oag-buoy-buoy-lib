@@ -2,7 +2,7 @@ import unittest
 
 from nose.tools import eq_
 
-from buoy.lib.notification.client import NoticePriorityQueue, NoticeQueue
+from buoy.lib.notification.client.common import NoticePriorityQueue, NoticeQueue
 from buoy.lib.notification.common import Notification, NotificationLevel, NoticeType
 
 

@@ -34,13 +34,13 @@ class DeviceDB(object):
         logger.debug("Connecting to database")
         self.connection = psycopg2.connect(**db_config)
 
-    def save(self, item: BaseItem):
+    def save(self, item: BaseItem) -> BaseItem:
         """ Inserta un nuevo registro en la base de datos """
         try:
-            cur = self.get_cursor()
-            sql = self.create_insert_sql(item, cur)
-            cur.execute(sql)
-            item.id = cur.fetchone()[0]
+            with self.get_cursor() as cur:
+                sql = self.create_insert_sql(item, cur)
+                cur.execute(sql)
+                item.id = cur.fetchone()[0]
             self.connection.commit()
         except IntegrityError as e:
             if e.pgcode == errorcodes.UNIQUE_VIOLATION:
@@ -54,29 +54,33 @@ class DeviceDB(object):
 
     def get(self, identifier):
         """ Retorna un registro un registro dado un identificador """
-        cur = self.get_cursor()
-        sql = cur.mogrify(self._find_by_id_sql, (identifier,))
-        cur.execute(sql)
-        row = cur.fetchone()
+        with self.get_cursor() as cur:
+            sql = cur.mogrify(self._find_by_id_sql, (identifier,))
+            cur.execute(sql)
+            row = cur.fetchone()
 
         return row
 
-    def get_items_to_send(self, cls, size: int=100, offset: int=0) -> List[DictRow]:
+    def __get_items_to_send(self, cls, *args):
         """ Retorna la lista de registros nuevos a enviar """
-        cur = self.get_cursor()
-        sql = cur.mogrify(self._select_items_to_send_sql, (size, offset))
-        cur.execute(sql)
-        rows = cur.fetchall()
+        with self.get_cursor() as cur:
+            sql = cur.mogrify(self._select_items_to_send_sql, *args)
+            cur.execute(sql)
+            rows = cur.fetchall()
+
         items = []
         for row in rows:
             items.append(cls(**row))
         return items
 
+    def get_items_to_send(self, cls, size: int=100, offset: int=0) -> List[DictRow]:
+        return self.__get_items_to_send(cls, (size, offset, ))
+
     def update_status(self, ids: List[int], status=True):
         if len(ids):
-            cur = self.get_cursor()
-            sql = cur.mogrify(self._update_status_sql, (status, ids))
-            cur.execute(sql)
+            with self.get_cursor() as cur:
+                sql = cur.mogrify(self._update_status_sql, (status, ids))
+                cur.execute(sql)
             self.connection.commit()
 
     def create_insert_sql(self, item, cursor):
