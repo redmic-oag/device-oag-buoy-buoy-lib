@@ -1,52 +1,94 @@
-class DataSenderNamespaceClient(BaseNamespace, Sender):
+# -*- coding: utf-8 -*-
+
+import logging
+
+from threading import Thread
+from queue import PriorityQueue
+from socketIO_client import BaseNamespace
+from vodem.simple import sms_send
+
+from buoy.lib.notification.common import NoticeType, Notification
+
+logger = logging.getLogger(__name__)
+
+
+class WaitSMSThread(Thread):
+    def __init__(self, queue_notification: PriorityQueue, phone_alert: str, emit):
+        Thread.__init__(self)
+        self.queue_notification = queue_notification
+        self._emit = emit
+        self._active = False
+        self.phone_alert = phone_alert
+
+    def run(self):
+        """
+        Envía los datos al servidor de notificaciones
+        :return:
+        """
+        self._active = True
+        while self.is_active():
+            item = self.queue_notification.get()
+            self.send_notification(item)
+            self.queue_notification.task_done()
+
+    def is_active(self):
+        return self._active
+
+    def send_notification(self, notification: Notification):
+        """
+        Envía la notificación al servidor, serializada en formato JSON
+        :param notification: Notificación a enviar
+        :return:
+        """
+        self.send_sms(notification)
+        self.emit("sended_notification", notification.to_json())
+
+    def send_sms(self, notification: Notification):
+
+        if notification and notification.message:
+            phone = self.phone_alert
+            if notification.phone:
+                phone = notification.phone
+
+            sms_send(phone, notification.message)
+            logger.info("Send SMS %s content %s" % (phone, notification.message, ))
+
+    def emit(self, event: str, data):
+        self._emit(event, data)
+
+    def stop(self):
+        self._active = False
+        self.join()
+
+
+class NotificationNamespaceClient(BaseNamespace):
+    """
+    Permite el envío de notificaciones desde los clientes, se encarga
+    de recibir los notificaciones a través de una cola y enviarlas
+    al centro de notificaciones
+    """
     def __init__(self, io, path):
-        BaseNamespace.__init__(self, io, path)
-        Sender.__init__(self)
-        self.queue_data = Queue()
-        self.device_up = False
-        self.active = True
-        self.size = 100
-        self.id = 1
+        super(NotificationNamespaceClient, self).__init__(io, path)
+        self.queue_notification = io.queue_notice.queue_type(NoticeType.NOTIFICATION)
+        self.active = False
+        self.thread_wait_notification = None
+        self.target_id = "SMS"
 
     def on_connect(self):
-        logger.info('[Connected]')
-
-    def on_reconnect(self):
-        logger.info('[Reconnected]')
+        """
+        Activa el envío de notificaciones al servidor una vez se halla
+        establecido la comunicación a través del socket
+        :return:
+        """
+        self.thread_wait_notification = WaitSMSThread(queue_notification=self.queue_notification,
+                                                      emit=self.emit)
+        self.thread_wait_notification.start()
 
     def on_disconnect(self):
-        self.device_up = False
-        logger.info('[Disconnected]')
-
-    def on_device_up(self):
-        self.device_up = True
-        self.emit('get_data', self.size)
-
-    def on_new_data(self, items):
-        """ Envía los datos recibidos desde el dispositivo y envía la confirmación recibida
-            desde el servidor al dispositivo, para que marque el dato como envíado """
-
-        self.queue_data.put_nowait(items)
-
-    def process_data(self):
-        while self.active:
-            items = self.queue_data.get()
-
-            if not items:
-                break
-
-            items_ok = []
-            items_error = []
-
-            for item in items:
-                logger.info('[New data]')
-                try:
-                    self.send_data(item)
-                    items_ok.append(item)
-                except Exception:
-                    logger.info("Error")
-                    items_ok.append(item)
-
-            self.emit('sended_data', items_ok, items_error)
-
-        self.active = False
+        """
+        Cuando se desconecta el socket, se marca como inactivo, para
+        evitar el envío de notificaciones al servidor
+        :return:
+        """
+        if self.thread_wait_notification and self.thread_wait_notification.is_alive():
+            self.thread_wait_notification.stop()

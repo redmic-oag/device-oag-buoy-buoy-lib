@@ -7,10 +7,9 @@ from threading import Thread
 from queue import PriorityQueue
 from socketIO_client import SocketIO, BaseNamespace
 
-from buoy.lib.device.database import DeviceDB
 from buoy.lib.notification.common import NoticeBase, NotificationLevel, NoticeType
 from buoy.lib.notification.common import Notification
-from buoy.lib.protocol.item import DataEncoder, BaseItem
+from buoy.lib.protocol.item import DataEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -78,21 +77,12 @@ class WaitNotificationThread(Thread):
         self._active = True
         while self.is_active():
             item = self.queue_notification.get()
-            self.send_notification(item)
+            if self.need_notification(item):
+                self.send_notification(item)
             self.queue_notification.task_done()
 
     def is_active(self):
         return self._active
-
-    def send_notification(self, notice: NoticeBase):
-        """
-        Envía la notificación al servidor, serializada en formato JSON
-        :param notice: Notificación a enviar
-        :return:
-        """
-        json_item = json.dumps(notice, sort_keys=True, cls=DataEncoder)
-        if self.need_notification(notice):
-            self.emit("new_notification", json_item)
 
     def need_notification(self, notice: Notification) -> bool:
         """
@@ -102,6 +92,15 @@ class WaitNotificationThread(Thread):
         :return: Si se envío o no (True|False)
         """
         return notice.level in self.level_notification
+
+    def send_notification(self, notice: NoticeBase):
+        """
+        Envía la notificación al servidor, serializada en formato JSON
+        :param notice: Notificación a enviar
+        :return:
+        """
+        json_item = json.dumps(notice, sort_keys=True, cls=DataEncoder)
+        self.emit("new_notification", json_item)
 
     def emit(self, event: str, data):
         self._emit(event, data)
@@ -164,4 +163,3 @@ class NotificationThread(Thread):
         self.socket.level_notification = self.level_notification
         self.socket.queue_notice = self.queue_notice
         self.notification_namespace = self.socket.define(NotificationNamespaceClient, '/notifications')
-

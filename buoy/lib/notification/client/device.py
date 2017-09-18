@@ -8,9 +8,9 @@ from typing import List
 from threading import Thread
 from socketIO_client import BaseNamespace
 
-from buoy.lib.device.database import DeviceDB
+from buoy.lib.device.database import DeviceDB, BaseItem
 from buoy.lib.notification.common import NoticeBase, NoticeType
-from buoy.lib.notification.client.common import DataEncoder, BaseItem, NoticeQueue, NotificationThread
+from buoy.lib.notification.client.common import DataEncoder, NoticeQueue, NotificationThread
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +169,20 @@ class NoticeDeviceThread(NotificationThread):
 
 
 class NotificationClient(object):
+    def __init__(self):
+        self.queues = {'notice': NoticeQueue()}
+
+        self._notification_thread = NotificationThread(queue_notice=self.queues['notice'])
+        self._notification_thread.start()
+
+    def send_notification(self, notification: NoticeBase):
+        logger.info(str(notification))
+        notification.daemon = self.daemon_name if hasattr(self, 'daemon_name') else __file__
+
+        self.queues['notice'].put_nowait(notification)
+
+
+class NoticeDeviceClient(object):
     def __init__(self, db, cls):
         self.queues = {'notice': NoticeQueue()}
 
@@ -177,5 +191,6 @@ class NotificationClient(object):
 
     def send_notification(self, notification: NoticeBase):
         logger.info(str(notification))
-        self.queues['notice'].put_nowait(notification)
+        notification.daemon = self.daemon_name if hasattr(self, 'daemon_name') else __file__
 
+        self.queues['notice'].put_nowait(notification)

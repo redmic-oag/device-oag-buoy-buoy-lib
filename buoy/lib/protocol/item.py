@@ -47,7 +47,6 @@ class BaseItem(object):
             try:
                 val = Decimal(value)
             except InvalidOperation:
-                # TODO Lanzar mensajes al log
                 logger.error("Convert string to decimal", value)
 
         return val

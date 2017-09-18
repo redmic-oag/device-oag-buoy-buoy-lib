@@ -4,7 +4,7 @@ import logging
 import time
 import signal
 import sys
-from os import getpid, makedirs, remove, EX_OK, EX_OSERR
+from os import getpid, makedirs, remove, EX_OK, EX_OSERR, kill
 from os.path import isfile, exists, join
 
 from buoy.lib.device.exceptions import DeviceBaseException
@@ -31,29 +31,29 @@ class PID(object):
     """
     def __init__(self, daemon_name, daemon_config):
         self.path_pidfile = daemon_config['path_pidfile']
-        self.pid = str(getpid())
-        self.name = daemon_name
-        self.pidfile = join(self.path_pidfile, self.name + ".pid")
-        self.create_path()
+        self.pid = getpid()
+        self.daemon_name = daemon_name
+        self.pid_file = join(self.path_pidfile, self.daemon_name + ".pid")
+        self.create_path_pid_file()
 
-    def create_path(self):
+    def create_path_pid_file(self):
 
         if not exists(self.path_pidfile):
             makedirs(self.path_pidfile)
 
-    def create(self):
-        if isfile(self.pidfile):
-            remove(self.pidfile)
+    def create_pid_file(self):
+        if isfile(self.pid_file):
+            remove(self.pid_file)
 
-        with open(self.pidfile, 'w') as f:
-            f.write(self.pid)
+        with open(self.pid_file, 'w') as f:
+            f.write(str(self.pid))
 
-    def remove(self):
-        if isfile(self.pidfile):
-            remove(self.pidfile)
+    def remove_pid_file(self):
+        if isfile(self.pid_file):
+            remove(self.pid_file)
 
 
-class Daemon(object):
+class Daemon(PID):
     """
         Clase base para la creación de un servicio linux
         Cuenta con un ciclo de vida:
@@ -64,9 +64,9 @@ class Daemon(object):
             * stop
     """
     def __init__(self, daemon_name: str, daemon_config, **kwargs) -> None:
+        super(Daemon, self).__init__(daemon_name, daemon_config)
         self.active = False
         self.daemon_name = daemon_name
-        self.pidfile = PID(daemon_name, daemon_config)
         self.start_timeout = kwargs.pop('start_timeout', 0)
 
         signal.signal(signal.SIGINT, self.handler_signal)
@@ -78,7 +78,7 @@ class Daemon(object):
 
     def _before_start(self):
         self.active = True
-        self.pidfile.create()
+        self.create_pid_file()
         self.before_start()
 
     def before_start(self):
@@ -108,10 +108,11 @@ class Daemon(object):
         self.send_notification(Notification(message="Stop service %s" % self.daemon_name,
                                             level=NotificationLevel.HIGHT))
 
-        time.sleep(10)
         self.active = False
         self._before_stop()
-        self.pidfile.remove()
+        time.sleep(0.5)
+        kill(self.pid, signal.SIGUSR1)
+        self.remove_pid_file()
         sys.exit(code)
 
     def stop(self):

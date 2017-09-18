@@ -37,8 +37,8 @@ class TestNotificationNamespaceServer(unittest.TestCase):
         }
 
         notification = Notification(**data)
-        mock_db.save = MagicMock(return_value=notification)
         namespace = NotificationNamespace(namespace="/notification", db_config=self.db_config)
+        namespace.db.save = MagicMock(return_value=notification)
 
         json_expected = json.dumps(notification, sort_keys=True, cls=DataEncoder)
         namespace.on_new_notification(json_expected)

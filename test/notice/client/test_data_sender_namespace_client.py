@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 
 from buoy.lib.protocol.nmea0183 import WIMDA
 from buoy.lib.sender.sender import Sender, NoConnectionToServerException, ErrorSendDataToServerException
-from buoy.lib.notification.client import DataSenderNamespaceClient, NoticeQueue
+from buoy.lib.notification.client.common import NoticeQueue
+from buoy.lib.notification.client.device import DataDeviceNamespaceClient
 
 
 class FakeResponse:
@@ -56,16 +57,16 @@ class TestDataSenderNamespaceClient(unittest.TestCase):
 
         self.assertRaises(ErrorSendDataToServerException, sender.send_data, self.url, self.item)
 
-    @patch.object('buoy.lib.notification.client.BaseNamespace.emit')
+    @patch.object('buoy.lib.notification.client.common.BaseNamespace.emit')
     @patch('buoy.lib.sender.sender.Sender.send_data', return_value=True)
-    def test_should_called_once_method_send_data_when_event_on_new_data_is_received(self, mock_send_data, mock_emit):
+    def test_should_calledOnceMethodSendData_when_eventOnNewDataIsReceived(self, mock_send_data, mock_emit):
         class FakeIO(object):
             def __init__(self):
                 self._url = 'http://redmic.es'
                 self.queue_notice = NoticeQueue()
 
         io = FakeIO()
-        namespace = DataSenderNamespaceClient(io, '/data')
+        namespace = DataDeviceNamespaceClient(io, '/data')
         items = []
         for i in range(10):
             items.append(self.item)

@@ -51,7 +51,7 @@ class TestItemSaveThread(unittest.TestCase):
 
         queue_data.put_nowait(None)
 
-        thread = ItemSaveThread(queue_save_data=queue_data, queue_notice=queue_notice)
+        thread = ItemSaveThread(queue_save_data=queue_data, queue_notice=queue_notice, db=None)
         thread.run()
 
         eq_(queue_notice.queue_type(NoticeType.DATA).qsize(), 2)

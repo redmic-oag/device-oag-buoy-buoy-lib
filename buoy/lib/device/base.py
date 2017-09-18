@@ -121,8 +121,7 @@ class Device(object):
             self.queues[queue_name] = Queue()
 
     def connect(self):
-        self.send_notification(Notification(proccess=self.name, message="Connecting to device",
-                                            level=NotificationLevel.NORMAL))
+        self.send_notification(Notification(message="Connecting to device", level=NotificationLevel.NORMAL))
         try:
             self._dev_connection = Serial(**self.serial_config)
         except SerialException as ex:
@@ -170,9 +169,9 @@ class Device(object):
     def disconnect(self):
         if self.is_open():
             self._dev_connection.close()
-            self.send_notification(Notification(proccess=self.name, message="Disconnected to device",
-                                                level=NotificationLevel.NORMAL))
+            self.send_notification(Notification(message="Disconnected to device", level=NotificationLevel.NORMAL))
 
+#       TODO Necesita cambiarse, para que cuando el socket está desconectado
         for k, v in self.queues.items():
             v.join()
 

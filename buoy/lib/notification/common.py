@@ -2,9 +2,11 @@
 
 import logging
 import re
+import json
+
 from datetime import datetime, timezone
 from enum import IntEnum, unique
-from buoy.lib.protocol.item import BaseItem
+from buoy.lib.protocol.item import BaseItem, DataEncoder
 from buoy.lib.device.currentmeter.acmplus import ACMPlusItem
 from buoy.lib.protocol.nmea0183 import WIMDA
 from buoy.lib.notification.exceptions import ValidationError
@@ -26,11 +28,11 @@ class NotificationLevel(IntEnum):
 
 
 class NoticeBase(BaseItem):
-    def __init__(self, notice_type: NoticeType, daemon: str, **kwargs):
+    def __init__(self, notice_type: NoticeType, **kwargs):
         super().__init__(**kwargs)
         self.level = kwargs.pop('level', NotificationLevel.NORMAL)
         self.datetime = kwargs.pop('datetime', datetime.now(tz=timezone.utc))
-        self.daemon = daemon
+        self.daemon = kwargs.pop('daemon', None)
         self.type = notice_type
 
     @property
@@ -70,6 +72,9 @@ class NoticeBase(BaseItem):
     @daemon.setter
     def daemon(self, value):
         self._daemon = value
+
+    def to_json(self):
+        return json.dumps(self, sort_keys=True, cls=DataEncoder)
 
     def __str__(self):
         return "{datetime} - {level} - {type}".format(**dict(self))
@@ -113,9 +118,9 @@ class NoticeData(NoticeBase):
 
 
 class Notification(NoticeBase):
-    def __init__(self, **kwargs):
+    def __init__(self, message: str, **kwargs):
         super().__init__(notice_type=NoticeType.NOTIFICATION, **kwargs)
-        self.message = kwargs.pop('message', None)
+        self.message = message
         self.phone = kwargs.pop('phone', None)
 
     @property

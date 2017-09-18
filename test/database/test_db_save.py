@@ -126,7 +126,7 @@ class TestNotification(BaseDBTests):
         'phone': "+34660045155",
         'level': NotificationLevel.CRITICAL,
         'message': "rebooted computer",
-        'daemon': "Prueba"
+        'daemon': "weather-station"
     }
 
 if __name__ == '__main__':

@@ -47,7 +47,7 @@ class DeviceDB(object):
                 logger.warning("Inserting data already inserted")
             else:
                 logger.exception("No insert data")
-        except DatabaseError:
+        except DatabaseError as e:
             logger.exception("No insert data")
 
         return item
