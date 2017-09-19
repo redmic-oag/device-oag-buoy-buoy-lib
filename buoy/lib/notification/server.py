@@ -19,8 +19,7 @@ from buoy.lib.device.base import DeviceDB
 from buoy.lib.notification.common import NotificationLevel, Notification, BaseItem
 from buoy.lib.notification.client.common import NoticeQueue
 
-#logger = logging.getLogger(__name__)
-logger = logging.basicConfig(filename='example.log', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class NotificationDB(DeviceDB):
@@ -156,17 +155,12 @@ class DataNamespace(Namespace):
 
 
 class NotificationThread(Thread):
-    def __init__(self, **kwargs):
+    def __init__(self, db_config, **kwargs):
         super().__init__(**kwargs)
         self.app = Flask(__name__)
         self.app.debug = False
         self.socketio = SocketIO(self.app)
-        db_config = {
-            'database': 'boyadb',
-            'user': 'boya',
-            'password': 'b0y4_04G',
-            'host': '127.0.0.1'
-        }
+
         self.socketio.on_namespace(NotificationNamespace('/notifications', db_config=db_config))
         self.socketio.on_namespace(DataNamespace('/data'))
 
