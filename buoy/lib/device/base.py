@@ -106,7 +106,8 @@ class Device(object):
     def __init__(self, device_name: None, **kwargs):
         self.serial_config = kwargs.pop('serial_config', None)
         self.db = kwargs.pop('db')
-        self.cls_reader = kwargs.pop('cls_reader', DeviceReader)
+        self.cls_reader = kwargs.pop('cls_reader', None)
+        self.cls_writer = kwargs.pop('cls_writer', None)
 
         self.active = False
 
@@ -134,10 +135,7 @@ class Device(object):
                 self.queues[queue_name] = Queue()
 
             self._create_threads()
-
-            self._thread_reader.start()
-            self._thread_writer.start()
-            self._thread_save.start()
+            self._start_threads()
 
             self.configure()
 
@@ -157,14 +155,27 @@ class Device(object):
                                               queue_exceptions=self.queues['exceptions'],
                                               queue_notice=self.queues['notice'])
 
-        self._thread_writer = DeviceWriter(device=self._dev_connection,
-                                           queue_write_data=self.queues['write_data'],
-                                           queue_exceptions=self.queues['exceptions'],
-                                           )
+        self._thread_writer = self.cls_writer(device=self._dev_connection,
+                                              queue_write_data=self.queues['write_data'],
+                                              queue_exceptions=self.queues['exceptions'])
 
         self._thread_save = ItemSaveThread(queue_save_data=self.queues['save_data'],
                                            queue_notice=self.queues['notice'],
                                            db=self.db)
+
+    def _start_threads(self):
+        self._thread_reader and self._thread_reader.start()
+        self._thread_writer and self._thread_writer.start()
+        self._thread_save and self._thread_save.start()
+
+    def close(self):
+        if self.is_open():
+            self.stop()
+            self.connection.close()
+
+    def stop(self):
+        if self.is_open():
+            self.send_notification("Close transmition")
 
     def disconnect(self):
         if self.is_open():
