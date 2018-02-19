@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import yaml
 import logging
 from os import path
+
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +20,12 @@ def load_config(path_config):
 
 
 def load_config_device(device_name, path_config='/etc/buoy/buoy.yaml'):
-
     config = load_config(path_config=path_config)
 
     return config['device'][device_name]
 
 
 def load_config_device_serial(device_name, path_config='/etc/buoy/device.yaml'):
-
     config = load_config_device(device_name, path_config=path_config)
 
     return config['device'][device_name]['serial']

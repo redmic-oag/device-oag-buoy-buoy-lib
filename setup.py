@@ -76,8 +76,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['pyserial', 'pynmea2', 'requests', 'configparser',
-                      'pypandoc', 'pyyaml', 'mypy', 'flask-socketio', 'socketIO-client', 'jsonpickle'],
+    install_requires=['configparser', 'pypandoc', 'pyyaml', 'mypy', 'psutil'],
     setup_requires=['pytest-runner'],
 
     # List additional groups of dependencies here (e.g. development
@@ -91,8 +90,7 @@ setup(
 
     tests_require=[
         'nose',
-        'pytest',
-        'testing.postgresql'
+        'pytest'
     ],
 
     # If there are data files included in your packages that need to be

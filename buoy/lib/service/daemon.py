@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import time
 import signal
 import sys
-from os import getpid, makedirs, remove, EX_OK, EX_OSERR, kill
+import time
+from os import getpid, makedirs, remove, EX_OK, EX_OSERR
 from os.path import isfile, exists, join
-
-from buoy.lib.device.exceptions import DeviceBaseException
-from buoy.lib.notification.common import Notification, NotificationLevel, NoticeBase
 
 logger = logging.getLogger(__name__)
 
 
 def get_config(device_name, buoy_config):
     serial_config = buoy_config['device'][device_name]['serial']
+    mqtt_config = buoy_config['device'][device_name]['mqtt']
     db_config = buoy_config['database']
     service_config = buoy_config['service']
 
-    return serial_config, db_config, service_config
+    return serial_config, mqtt_config, db_config, service_config
 
 
 class DaemonException(Exception):
@@ -29,15 +27,16 @@ class PID(object):
     """
         Clase para la gestión del PID de un servicio utilizando un fichero
     """
-    def __init__(self, daemon_name, daemon_config):
+
+    def __init__(self, **kwargs):
+        daemon_config = kwargs.pop('daemon_config')
+        self.daemon_name = kwargs.pop('daemon_name')
         self.path_pidfile = daemon_config['path_pidfile']
         self.pid = getpid()
-        self.daemon_name = daemon_name
         self.pid_file = join(self.path_pidfile, self.daemon_name + ".pid")
         self.create_path_pid_file()
 
     def create_path_pid_file(self):
-
         if not exists(self.path_pidfile):
             makedirs(self.path_pidfile)
 
@@ -63,21 +62,22 @@ class Daemon(PID):
             * before_stop
             * stop
     """
-    def __init__(self, daemon_name: str, daemon_config, **kwargs) -> None:
-        super(Daemon, self).__init__(daemon_name, daemon_config)
-        self.active = False
-        self.daemon_name = daemon_name
+
+    def __init__(self, **kwargs) -> None:
         self.start_timeout = kwargs.pop('start_timeout', 0)
+        super(Daemon, self).__init__(**kwargs)
+
+        self._active = False
 
         signal.signal(signal.SIGINT, self.handler_signal)
         signal.signal(signal.SIGTERM, self.handler_signal)
 
     def handler_signal(self, signum, frame):
         """ Maneja la captura de señales de interrupción, poniendo el servicio en modo inactivo """
-        self.active = False
+        self._active = False
 
     def _before_start(self):
-        self.active = True
+        self._active = True
         self.create_pid_file()
         self.before_start()
 
@@ -85,12 +85,19 @@ class Daemon(PID):
         """ Función que se ejecuta antes de iniciar el servicio """
         pass
 
+    def is_active(self):
+        return self._active
+
     def start(self):
-        self.send_notification(Notification(message="Start service %s" % self.daemon_name,
-                                            level=NotificationLevel.HIGHT))
+        logger.info("Start service")
+
         self._before_start()
         time.sleep(self.start_timeout)
-        self.run()
+        try:
+            self.run()
+        except Exception as ex:
+            self.error()
+
         self._stop()
 
     def run(self):
@@ -105,51 +112,16 @@ class Daemon(PID):
         pass
 
     def _stop(self, code=EX_OK):
-        self.send_notification(Notification(message="Stop service %s" % self.daemon_name,
-                                            level=NotificationLevel.HIGHT))
-
-        self.active = False
+        self._active = False
         self._before_stop()
-        time.sleep(0.5)
-        kill(self.pid, signal.SIGUSR1)
         self.remove_pid_file()
         sys.exit(code)
 
     def stop(self):
+        logger.info("Stop service")
         self._stop()
 
     def error(self):
         """ Función que se ejecuta cuando se produce un error """
-        self.send_notification(Notification(message="Error in service %s" % self.daemon_name,
-                                            level=NotificationLevel.HIGHT))
+        logger.error("Service exit status fail")
         self._stop(code=EX_OSERR)
-
-    def send_notification(self, notification: NoticeBase):
-        logger.info(notification.message)
-
-
-class DaemonDevice(Daemon):
-    def __init__(self, daemon_name: str, daemon_config) -> None:
-        Daemon.__init__(self, daemon_name=daemon_name, daemon_config=daemon_config)
-
-    def before_start(self):
-        try:
-            self.connect()
-        except DeviceBaseException as ex:
-            self.send_notification(Notification(message=ex.message, level=ex.level, datetime=ex.datetime))
-        except Exception as ex:
-            pass
-
-        self.error()
-
-    def connect(self):
-        pass
-
-    def run(self):
-        while self.active:
-            time.sleep(0.2)
-
-    def before_stop(self):
-        self.disconnect()
-
-

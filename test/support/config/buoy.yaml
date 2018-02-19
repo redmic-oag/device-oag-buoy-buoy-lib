@@ -1,3 +1,0 @@
-service:
-    path_pidfile: ./test/support/pids/
-
