@@ -1,3 +1,5 @@
+[![pipeline status](https://git.redmic.net/oag/buoy_lib/badges/master/pipeline.svg)](https://git.redmic.net/oag/buoy_lib/commits/master) [![coverage report](https://git.redmic.net/oag/buoy_lib/badges/master/coverage.svg)](https://git.redmic.net/oag/buoy_lib/commits/master)
+
 # Boya
 Este proyecto surge por la necesidad de crear una boya científica donde recoger
 datos de diferentes dispositivos. Para ello se ha optado por utilizar un minipc
