@@ -42,7 +42,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 3 - Stable',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
@@ -76,7 +76,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['configparser', 'pypandoc', 'pyyaml', 'mypy', 'psutil'],
+    install_requires=['pypandoc'],
     setup_requires=['pytest-runner'],
 
     # List additional groups of dependencies here (e.g. development
@@ -85,7 +85,7 @@ setup(
     # $ pip install -e .[dev,test]
     extras_require={
         'dev': ['check-manifest'],
-        'test': ['coverage'],
+        'test': ['coverage']
     },
 
     tests_require=[
@@ -110,6 +110,6 @@ setup(
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
-        'console_scripts': [],
+        'console_scripts': []
     },
 )
