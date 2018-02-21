@@ -1,0 +1,19 @@
+image: docker:latest
+services:
+  - docker:dind
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/pip-cache"
+
+stages:
+  - test
+
+testing:
+  image: python:3.6-alpine3.7
+  stage: test
+  except:
+    - master
+  before_script:
+    - pip install -r requires.txt
+  script:
+    - nosetests
