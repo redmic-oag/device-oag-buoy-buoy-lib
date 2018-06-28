@@ -1,4 +1,4 @@
-[![pipeline status](https://git.redmic.net/oag/buoy_lib/badges/master/pipeline.svg)](https://git.redmic.net/oag/buoy_lib/commits/master) [![coverage report](https://git.redmic.net/oag/buoy_lib/badges/master/coverage.svg)](https://git.redmic.net/oag/buoy_lib/commits/master)
+[![pipeline status](https://gitlab.com/redmic-project/device/oag-buoy/buoy-lib/badges/master/pipeline.svg)](https://gitlab.com/redmic-project/device/oag-buoy/buoy-lib/commits/master) [![coverage report](https://gitlab.com/redmic-project/device/oag-buoy/buoy-lib/badges/master/coverage.svg)](https://gitlab.com/redmic-project/device/oag-buoy/buoy-lib/commits/master)
 
 # Boya
 Este proyecto surge por la necesidad de crear una boya científica donde recoger
