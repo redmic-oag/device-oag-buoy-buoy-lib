@@ -1,17 +1,40 @@
-image: docker:latest
-services:
-  - docker:dind
-
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/pip-cache"
-
 stages:
   - test
+  - package
+  - publish
+
+image: python:3.6
 
 testing:
-  image: python:3.6-alpine3.7
   stage: test
+  variables:
+    PIP_CACHE_DIR: "${CI_PROJECT_DIR}/pip-cache"
   before_script:
-    - pip install -r requirements.txt
+    - pip3 install -r requirements.txt
   script:
     - nosetests
+
+packaging:
+  stage: package
+  variables:
+    PIP_CACHE_DIR: "${CI_PROJECT_DIR}/pip-cache"
+  before_script:
+    - pip3 install -r requirements.txt
+  script:
+    - python setup.py sdist bdist_wheel
+  artifacts:
+    name: "${CI_PROJECT_NAME}-${CI_COMMIT_REF_NAME}"
+    expire_in: '6 months'
+    paths:
+      - dist/*
+
+publishing:
+  stage: publish
+  variables:
+    PIP_CACHE_DIR: "${CI_PROJECT_DIR}/pip-cache"
+  before_script:
+    - pip install twine
+  script:
+    - >
+      twine upload dist/*
+      --username ${PYPI_USERNAME} --password ${PYPI_PASSWORD}

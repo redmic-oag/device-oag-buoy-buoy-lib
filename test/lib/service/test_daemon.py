@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from nose.tools import eq_, ok_
 
-from buoy.lib.service.daemon import Daemon
+from buoy.client.service.daemon import Daemon
 
 
 class DaemonTest(Daemon):
@@ -93,7 +93,8 @@ class TestDaemon(unittest.TestCase):
 
         eq_(self.daemon.is_active(), False)
 
-    def test_should_exitWithCode0_when_callStop(self):
+    @patch.object(Daemon, 'is_active', return_value=True)
+    def test_should_exitWithCode0_when_callStop(self, mock_is_active):
         self.daemon = Daemon(daemon_name=self.name, daemon_config=self.config)
 
         with self.assertRaises(SystemExit) as cm:
@@ -101,7 +102,8 @@ class TestDaemon(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, os.EX_OK)
 
-    def test_should_exitWithCode1_when_callError(self):
+    @patch.object(Daemon, 'is_active', return_value=True)
+    def test_should_exitWithCode1_when_callError(self, mock_is_active):
         self.daemon = Daemon(daemon_name=self.name, daemon_config=self.config)
 
         with self.assertRaises(SystemExit) as cm:

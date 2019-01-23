@@ -7,13 +7,10 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 from os import path
 
-from pypandoc import convert_text
 from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
 
-# Get the long description from the README file
-long_description = convert_text(path.join(here, 'README.md'), to='rst', format='md')
 
 setup(
     name='Buoy Lib',
@@ -23,15 +20,15 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.1',
 
-    description='Library - Scientific buoy - Multidevice',
-    long_description=long_description,
+    description='Library for create a daemon',
+    long_description='Library for create a daemon',
 
     # The project's main homepage.
-    url='http://git.redmic.net/oag/buoy',
+    url='https://gitlab.com/redmic-project/device/oag-buoy/buoy-lib',
 
     # Author details
-    author='Observatorio Ambiental Granadilla',
-    author_email='nacho@oag-fundacion.org',
+    author='Repositorio de Datos Marinos Integrados de Canarias',
+    author_email='info@redmic.es',
 
     # Choose your license
     license='MIT',
@@ -53,10 +50,7 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6'
     ],
 
     # What does your project relate to?
