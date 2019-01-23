@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from nose.tools import eq_, ok_
 
-from buoy.client.service.daemon import Daemon
+from buoy.lib.service.daemon import Daemon
 
 
 class DaemonTest(Daemon):
