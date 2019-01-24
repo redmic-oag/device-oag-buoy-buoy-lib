@@ -37,4 +37,4 @@ publishing:
   script:
     - >
       twine upload dist/*
-      --username ${PYPI_USERNAME} --password ${PYPI_PASSWORD} --upgrade
+      --username ${PYPI_USERNAME} --password ${PYPI_PASSWORD}
