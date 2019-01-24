@@ -58,7 +58,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    namespace_packages=['buoy.lib'],
+    namespace_packages=['buoy'],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
 
