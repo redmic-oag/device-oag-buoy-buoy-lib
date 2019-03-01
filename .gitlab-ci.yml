@@ -3,19 +3,19 @@ stages:
   - package
   - publish
 
-image: python:3.6
-
 testing:
   stage: test
+  image: registry.gitlab.com/redmic-project/docker/python-postgres:latest
   variables:
     PIP_CACHE_DIR: "${CI_PROJECT_DIR}/pip-cache"
   before_script:
     - pip3 install -r requirements.txt
   script:
-    - nosetests
+    - su -c nosetests gitlab
 
 packaging:
   stage: package
+  image: python:3.6
   variables:
     PIP_CACHE_DIR: "${CI_PROJECT_DIR}/pip-cache"
   before_script:
@@ -30,6 +30,7 @@ packaging:
 
 publishing:
   stage: publish
+  image: python:3.6
   variables:
     PIP_CACHE_DIR: "${CI_PROJECT_DIR}/pip-cache"
   before_script:
