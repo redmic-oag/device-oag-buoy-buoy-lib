@@ -13,15 +13,15 @@ here = path.abspath(path.dirname(__file__))
 
 
 setup(
-    name='Buoy Lib',
+    name='Buoy-Lib',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.2',
 
-    description='Library for create a daemon',
-    long_description='Library for create a daemon',
+    description='Library',
+    long_description='Library',
 
     # The project's main homepage.
     url='https://gitlab.com/redmic-project/device/oag-buoy/buoy-lib',
@@ -70,7 +70,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['PyYAML'],
+    install_requires=['PyYAML', 'pyserial', 'python-dateutil', 'psycopg2', 'pyserial', 'paho-mqtt'],
     setup_requires=['pytest-runner'],
 
     # List additional groups of dependencies here (e.g. development
@@ -79,14 +79,13 @@ setup(
     # $ pip install -e .[dev,test]
     extras_require={
         'dev': ['check-manifest'],
-        'test': ['coverage']
+        'test': ['coverage'],
     },
 
     tests_require=[
         'nose',
-        'rednose',
         'pytest',
-        'colorama'
+        'testing.postgresql'
     ],
 
     # If there are data files included in your packages that need to be
