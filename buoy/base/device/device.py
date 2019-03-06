@@ -8,6 +8,7 @@ from serial import Serial, SerialException
 from buoy.base.device.threads.mqtt import MqttThread
 from buoy.base.device.threads.resender import DBToSendThread
 from buoy.base.device.threads.save import SaveThread
+from buoy.base.device.exceptions import DeviceNoDetectedException
 
 logger = logging.getLogger(__name__)
 
