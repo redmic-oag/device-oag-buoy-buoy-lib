@@ -6,10 +6,8 @@ import time
 import unittest
 from os.path import exists, join
 from unittest.mock import patch
-
 from nose.tools import eq_, ok_
-
-from buoy.lib.daemon import Daemon
+from buoy.lib.service.daemon import Daemon
 
 
 class DaemonTest(Daemon):
