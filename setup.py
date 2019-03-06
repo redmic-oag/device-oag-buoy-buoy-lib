@@ -13,15 +13,15 @@ here = path.abspath(path.dirname(__file__))
 
 
 setup(
-    name='Buoy-Lib',
+    name='Buoy-Base',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.0.3',
+    version='0.0.4',
 
-    description='Library',
-    long_description='Library',
+    description='Library for developing IoT service',
+    long_description='Library for developing IoT service',
 
     # The project's main homepage.
     url='https://gitlab.com/redmic-project/device/oag-buoy/buoy-lib',
@@ -54,7 +54,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='buoy ocean device',
+    keywords='buoy ocean device iot',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().

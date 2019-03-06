@@ -7,7 +7,7 @@ from unittest.mock import patch
 from nose.tools import eq_
 from serial import SerialException
 
-import buoy.lib.utils.config as load_config
+import buoy.base.utils.config as load_config
 from buoy.tests.database import prepare_db
 from buoy.tests.serial import SerialMock
 

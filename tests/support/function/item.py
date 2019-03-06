@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from buoy.lib.data.item import BaseItem
+from buoy.base.data.item import BaseItem
 
 
 class Item(BaseItem):
