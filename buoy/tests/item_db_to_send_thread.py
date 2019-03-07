@@ -9,33 +9,15 @@ from buoy.base.database import DeviceDB
 from buoy.base.device.threads.resender import DBToSendThread
 from buoy.tests.database import *
 
-skip_test = False
-
 
 class DBToSendThreadTest(unittest.TestCase):
     path_sql = 'tests/support/data'
     db_tablename = "device"
     item_cls = None
-
-    @classmethod
-    def setUpClass(cls):
-        global skip_test
-
-        if cls is DBToSendThreadTest:
-            skip_test = True
-        else:
-            skip_test = False
-
-        super(DBToSendThreadTest, cls).setUpClass()
+    __test__ = False
 
     def setUp(self):
-        if skip_test:
-            self.skipTest("Skip BaseTest tests, it's a base class")
-
         db_conf = prepare_db(path.join(self.path_sql, 'setup.sql'))
-
-        if not self.item_cls:
-            print("Errorororor")
 
         self.dev_db = DeviceDB(
             db_config=db_conf,
@@ -65,7 +47,3 @@ class DBToSendThreadTest(unittest.TestCase):
         thread.activity()
 
         eq_(queue_send_data.qsize(), 5)
-
-
-if __name__ == '__main__':
-    unittest.main()

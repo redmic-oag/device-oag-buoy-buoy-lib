@@ -19,25 +19,8 @@ def get_items(num=2):
     return items
 
 
-skip_test = False
-
-
-class TestItemSaveThread(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        global skip_test
-
-        if cls is TestItemSaveThread:
-            skip_test = True
-        else:
-            skip_test = False
-
-        super(TestItemSaveThread, cls).setUpClass()
-
-    def setUp(self):
-        if skip_test:
-            self.skipTest("Skip BaseTest tests, it's a base class")
+class ItemSaveThreadTest(unittest.TestCase):
+    __test__ = False
 
     @patch.object(SaveThread, 'save')
     @patch.object(SaveThread, 'set_sent')
