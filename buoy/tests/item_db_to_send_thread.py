@@ -8,18 +8,39 @@ from nose.tools import eq_
 from buoy.base.database import DeviceDB
 from buoy.base.device.threads.resender import DBToSendThread
 from buoy.tests.database import *
-from tests.support.function.item import Item
+
+skip_test = False
 
 
-class TestItemInDBToSendThread(unittest.TestCase):
+class DBToSendThreadTest(unittest.TestCase):
     path_sql = 'tests/support/data'
+    db_tablename = "device"
+    item_cls = None
+
+    @classmethod
+    def setUpClass(cls):
+        global skip_test
+
+        if cls is DBToSendThreadTest:
+            skip_test = True
+        else:
+            skip_test = False
+
+        super(DBToSendThreadTest, cls).setUpClass()
 
     def setUp(self):
+        if skip_test:
+            self.skipTest("Skip BaseTest tests, it's a base class")
+
         db_conf = prepare_db(path.join(self.path_sql, 'setup.sql'))
+
+        if not self.item_cls:
+            print("Errorororor")
+
         self.dev_db = DeviceDB(
             db_config=db_conf,
-            db_tablename="device",
-            cls_item=Item
+            db_tablename=self.db_tablename,
+            cls_item=self.item_cls
         )
 
     def test_noPutItemInQueue_when_queueIsFullInLoop(self):
