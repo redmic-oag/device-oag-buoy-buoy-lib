@@ -11,10 +11,10 @@ def is_valid_file(filename):
     return filename
 
 
-def parse_args():
+def parse_args(path_config='/etc/buoy/'):
     parser = argparse.ArgumentParser()
     parser.add_argument("--config-file", help="Ruta al fichero de configuración del servicio",
-                        default='/etc/buoy/buoy.yaml', type=is_valid_file)
+                        default=path.join(path_config, 'device.yaml'), type=is_valid_file)
     parser.add_argument("--config-log-file", help="Ruta al fichero de configuración de los logs",
-                        default='/etc/buoy/logging.yaml', type=is_valid_file)
+                        default=path.join(path_config, 'logging.yaml'), type=is_valid_file)
     return parser.parse_args()

@@ -5,23 +5,27 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
-from os import path
+from os import path, environ
 
 from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
 
+if environ.get('CI_COMMIT_TAG'):
+    version = environ['CI_COMMIT_TAG']
+else:
+    version = environ['CI_JOB_ID']
 
 setup(
-    name='Buoy Lib',
+    name='Buoy-Base',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.0.2',
+    version=version,
 
-    description='Library for create a daemon',
-    long_description='Library for create a daemon',
+    description='Library for developing IoT service',
+    long_description='Library for developing IoT service',
 
     # The project's main homepage.
     url='https://gitlab.com/redmic-project/device/oag-buoy/buoy-lib',
@@ -54,11 +58,10 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='buoy ocean device',
+    keywords='buoy ocean device iot',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    namespace_packages=['buoy'],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
 
@@ -70,7 +73,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['PyYAML'],
+    install_requires=['PyYAML', 'pyserial', 'python-dateutil', 'psycopg2', 'pyserial', 'paho-mqtt'],
     setup_requires=['pytest-runner'],
 
     # List additional groups of dependencies here (e.g. development
@@ -79,14 +82,13 @@ setup(
     # $ pip install -e .[dev,test]
     extras_require={
         'dev': ['check-manifest'],
-        'test': ['coverage']
+        'test': ['coverage'],
     },
 
     tests_require=[
         'nose',
-        'rednose',
         'pytest',
-        'colorama'
+        'testing.postgresql'
     ],
 
     # If there are data files included in your packages that need to be
