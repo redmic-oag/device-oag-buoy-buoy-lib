@@ -15,15 +15,16 @@ logger = logging.getLogger(__name__)
 
 class Device(object):
     def __init__(self, *args, **kwargs):
-        self.serial_config = kwargs.pop('serial_config', None)
+        self.serial_conf = kwargs.pop('serial', None)
         self.db = kwargs.pop('db')
 
         self.cls_reader = kwargs.pop('cls_reader', None)
+        self.reader_conf = kwargs.pop('reader', None)
         self.cls_writer = kwargs.pop('cls_writer', None)
         self.cls_save = kwargs.pop('cls_save', SaveThread)
         self.cls_send = kwargs.pop('cls_send', MqttThread)
         self.cls_reader_from_db = kwargs.pop('cls_reader_from_db', DBToSendThread)
-        self.mqtt = kwargs.pop('mqtt', None)
+        self.mqtt_conf = kwargs.pop('mqtt', None)
 
         self.qsize_send_data = kwargs.pop('qsize_send_data', 1000)
 
@@ -55,7 +56,7 @@ class Device(object):
     def connect(self):
         logger.info("Connecting to device")
         try:
-            self._dev_connection = Serial(**self.serial_config)
+            self._dev_connection = Serial(**self.serial_conf)
         except SerialException as ex:
             raise DeviceNoDetectedException(process=self.name, exception=ex)
         logger.info("Connected to device")
@@ -69,7 +70,8 @@ class Device(object):
             self._thread_reader = self.cls_reader(device=self._dev_connection,
                                                   queue_save_data=self.queues['save_data'],
                                                   queue_send_data=self.queues['send_data'],
-                                                  queue_notice=self.queues['notice'])
+                                                  queue_notice=self.queues['notice'],
+                                                  **self.reader_conf)
         if self.cls_save:
             self._thread_save = self.cls_save(queue_save_data=self.queues['save_data'],
                                               queue_notice=self.queues['notice'],
@@ -82,7 +84,7 @@ class Device(object):
             self._thread_send = self.cls_send(queue_send_data=self.queues['send_data'],
                                               queue_data_sent=self.queues['save_data'],
                                               queue_notice=self.queues['notice'],
-                                              **self.mqtt)
+                                              **self.mqtt_conf)
 
     def _start_threads(self):
         self._run_action_threads(action='start')
