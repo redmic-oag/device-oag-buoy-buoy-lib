@@ -10,6 +10,7 @@ from serial import Serial
 from buoy.base.data.item import ItemQueue, BaseItem
 from buoy.base.device.exceptions import LostConnectionException, ProcessDataExecption
 from buoy.base.device.threads.base import DeviceBaseThread
+from buoy.base.data.item import BufferItems
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +20,12 @@ class DeviceReader(DeviceBaseThread):
 
     def __init__(self, device: Serial, queue_notice: Queue, **kwargs):
         self.char_splitter = kwargs.pop('char_splitter', '\n')
+        self.interval = kwargs.pop("interval", None)
+
         super(DeviceReader, self).__init__(device, queue_notice)
+
         self.buffer = ''
+        self.buffer_items = BufferItems(interval=self.interval)
 
         self.queue_save_data = kwargs.pop('queue_save_data', None)
         if not self.queue_save_data:
@@ -57,7 +62,9 @@ class DeviceReader(DeviceBaseThread):
         for line in self.split_by_lines(buffer[0]):
             item = self.parser(line)
             if item:
-                self.put_in_queues(item)
+                aggs_item = self.buffer_items.append(item)
+                if aggs_item:
+                    self.put_in_queues(aggs_item)
             logger.debug("Received data - " + line)
 
     def split_by_lines(self, buffer: str) -> List[str]:

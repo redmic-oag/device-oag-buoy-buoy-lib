@@ -2,10 +2,11 @@
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import *
 from enum import Enum
 from uuid import uuid4, UUID
+from buoy.base.data.utils import convert_to_seconds, round_time
 
 from dateutil import parser
 
@@ -131,3 +132,61 @@ class ItemQueue(object):
     def __init__(self, data: BaseItem, **kwargs):
         self.status = kwargs.pop("status", Status.NEW)
         self.data = data
+
+
+class BufferItems(object):
+    def __init__(self, **kwargs):
+        self.__buffer = []
+        self.interval = kwargs.pop("interval", None)
+        if self.interval:
+            self.interval = convert_to_seconds(self.interval)
+
+        self.__limit_higher = None
+        self.__limit_lower = None
+        self.__item_cls = kwargs.pop("item_cls", BaseItem)
+        self.__fields = ["value"]
+
+    def append(self, other: BaseItem):
+        item = None
+
+        if other is None:
+            return item
+
+        if self.interval is None:
+            item = other
+        elif self.inside_interval(other.date):
+            if len(self.__buffer) == 0:
+                self.set_limits(other.date)
+            self.__buffer.append(other)
+        else:
+            item = self.process_buffer()
+            self.clear()
+            self.append(other)
+
+        return item
+
+    def set_limits(self, date):
+        self.__limit_lower = round_time(dt=date, round_to=self.interval, to="down")
+        self.__limit_higher = self.__limit_lower + timedelta(seconds=self.interval)
+
+    def clear(self):
+        self.__buffer.clear()
+        self.__limit_lower = None
+        self.__limit_higher = None
+
+    def limits(self):
+        return self.__limit_lower, self.__limit_higher
+
+    def inside_interval(self, date):
+        return self.__limit_higher is None and self.__limit_lower is None or \
+               (self.__limit_lower < date <= self.__limit_higher)
+
+    def process_buffer(self):
+        item_attr = {
+            "date": self.__limit_higher
+        }
+        for key in self.__fields:
+            attr = [getattr(o, key, None) for o in self.__buffer]
+            item_attr[key] = sum(attr) / len(attr)
+
+        return self.__item_cls(**item_attr)
