@@ -17,16 +17,21 @@ class Item(BaseItem):
         self._value = self._convert_string_to_decimal(value)
 
 
-def get_item():
+def get_item(**kwargs):
+    date = kwargs.pop("date", datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
     data = {
-        'date': datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f%z"),
+        'date': date,
         'value': '26.8'
     }
     return Item(**data)
 
 
-def get_items(num=2):
+def get_items(num=2, dates=None):
     items = []
     for i in range(0, num):
-        items.append(get_item())
+        if dates:
+            item = get_item(date=dates[i])
+        else:
+            item = get_item()
+        items.append(item)
     return items
