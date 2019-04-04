@@ -24,28 +24,29 @@ class BaseDeviceTest(unittest.TestCase):
         if not self.__test__:
             self.skipTest("Skip BaseTest tests, it's a base class")
 
-        buoy_config = load_config.load_config(path_config=self.config_buoy_file)
-        buoy_config['database'] = prepare_db(sql=self.init_db)
-
-        self.daemon = self.device_class(name=self.DEVICE_NAME, config=buoy_config)
-        self.thread = threading.Thread(daemon=True, target=self.daemon.start)
+        self.buoy_config = load_config.load_config(path_config=self.config_buoy_file)
+        self.buoy_config['database'] = prepare_db(sql=self.init_db)
 
     @patch('buoy.base.device.device.Serial', side_effect=SerialMock)
     def test_shouldReturnExitOK_when_stopService(self, mock_serial):
-        self.thread.start()
+
+        daemon = self.device_class(name=self.DEVICE_NAME, **self.buoy_config)
+        thread = threading.Thread(daemon=True, target=daemon.start)
+        thread.start()
+
         with self.assertRaises(SystemExit) as cm:
             time.sleep(1)
-            self.daemon.stop()
+            daemon.stop()
 
-        time.sleep(1)
+        time.sleep(5)
 
-        eq_(self.daemon.is_active(), False)
+        eq_(daemon.is_active(), False)
         prefix = '_thread_'
         names = ['reader', 'writer', 'save', 'send', 'reader_from_db']
         for name in names:
             field = prefix + name
-            if hasattr(self.daemon, field):
-                thread = getattr(self.daemon, field)
+            if hasattr(daemon, field):
+                thread = getattr(daemon, field)
                 is_active = getattr(thread, "is_active")()
                 eq_(is_active, False, msg=("Thread %s is active" % (field,)))
 
@@ -53,9 +54,10 @@ class BaseDeviceTest(unittest.TestCase):
 
     @patch('buoy.base.device.device.Serial', side_effect=SerialException())
     def test_shouldReturnException_when_theDeviceIsNotPresent(self, mock_serial):
+        daemon = self.device_class(name=self.DEVICE_NAME, **self.buoy_config)
         with self.assertRaises(SystemExit) as cm:
             time.sleep(1)
-            self.daemon.start()
+            daemon.start()
 
         self.assertEqual(cm.exception.code, EX_OSERR)
 

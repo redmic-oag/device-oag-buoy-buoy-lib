@@ -19,7 +19,7 @@ class Device(object):
         self.db = kwargs.pop('db')
 
         self.cls_reader = kwargs.pop('cls_reader', None)
-        self.reader_conf = kwargs.pop('reader', None)
+        self.reader_conf = kwargs.pop('reader', {})
         self.cls_writer = kwargs.pop('cls_writer', None)
         self.cls_save = kwargs.pop('cls_save', SaveThread)
         self.cls_send = kwargs.pop('cls_send', MqttThread)
@@ -121,7 +121,7 @@ class Device(object):
         self._run_action_threads(action='stop')
 
     def is_open(self):
-        return self._dev_connection and self._dev_connection.is_open and self.is_active()
+        return self._dev_connection and self._dev_connection.is_open() and self.is_active()
 
     def write(self, data):
         self.queues['write_data'].put_nowait(data + "\r")
