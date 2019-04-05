@@ -143,8 +143,13 @@ class BufferItems(object):
 
         self.__limit_higher = None
         self.__limit_lower = None
-        self.__item_cls = kwargs.pop("item_cls", BaseItem)
-        self.__fields = ["value"]
+
+        self.__item_cls = None
+        self.__fields = None
+
+    @staticmethod
+    def extract_fieldname_parameters(item):
+        return list(set(dir(item)) - set(dir(BaseItem)))
 
     def append(self, other: BaseItem):
         item = None
@@ -156,7 +161,12 @@ class BufferItems(object):
             item = other
         elif self.inside_interval(other.date):
             if len(self.__buffer) == 0:
+                if self.__fields is None and self.__item_cls is None:
+                    self.__item_cls = type(other)
+                    self.__fields = self.extract_fieldname_parameters(other)
+
                 self.set_limits(other.date)
+            logger.debug("Inserting item in buffer")
             self.__buffer.append(other)
         else:
             item = self.process_buffer()
@@ -166,8 +176,11 @@ class BufferItems(object):
         return item
 
     def set_limits(self, date):
+        logger.debug("Setting limits %s", str(date))
+        logger.debug("Interval %i", self.interval)
         self.__limit_lower = round_time(dt=date, round_to=self.interval, to="down")
         self.__limit_higher = self.__limit_lower + timedelta(seconds=self.interval)
+        logger.debug("Set limits lower: %s", str(self.__limit_lower))
 
     def clear(self):
         self.__buffer.clear()
@@ -182,11 +195,17 @@ class BufferItems(object):
                (self.__limit_lower < date <= self.__limit_higher)
 
     def process_buffer(self):
+        logger.debug("Proccesing buffer %i", len(self.__buffer))
+        logger.debug("Fieldnames: %s", " , ".join(self.__fields))
         item_attr = {
             "date": self.__limit_higher
         }
         for key in self.__fields:
-            attr = [getattr(o, key, None) for o in self.__buffer]
-            item_attr[key] = sum(attr) / len(attr)
+            attr = [getattr(o, key) for o in self.__buffer if getattr(o, key)]
+            if len(attr) > 0:
+                item_attr[key] = sum(attr) / len(attr)
+            else:
+                item_attr[key] = None
 
+        logger.debug("Item processed")
         return self.__item_cls(**item_attr)

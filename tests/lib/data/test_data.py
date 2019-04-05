@@ -5,8 +5,9 @@ from unittest.mock import patch
 from nose.tools import eq_
 
 from buoy.base.data.item import BufferItems
+from dateutil import parser
 from buoy.base.data.utils import convert_to_seconds
-from buoy.tests.item import Item, get_items
+from buoy.tests.item import Item, get_items, get_item
 
 
 class TestData(unittest.TestCase):
@@ -31,9 +32,9 @@ class TestData(unittest.TestCase):
 
     def test_shouldReturnLimitLowerAndHigher_when_setLimit(self):
         buffer = BufferItems(interval="10m")
-        date = datetime.strptime("2019-01-01T00:01:59", "%Y-%m-%dT%H:%M:%S")
-        limit_lower = datetime.strptime("2019-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S")
-        limit_higher = datetime.strptime("2019-01-01T00:10:00", "%Y-%m-%dT%H:%M:%S")
+        date = parser.parse("2019-04-05 07:29:06.356357+00:00")
+        limit_lower = parser.parse("2019-04-05T07:20:00.000+00:00")
+        limit_higher = parser.parse("2019-04-05T07:30:00.000+00:00")
 
         buffer.set_limits(date)
 
@@ -42,7 +43,7 @@ class TestData(unittest.TestCase):
     @unittest.skip
     @patch.object(BufferItems, 'process_buffer')
     def test_shouldThreeProcessCalled_when_passFewDates(self, mock_process_buffer):
-        buffer = BufferItems(interval="1m", item_cls=Item)
+        buffer = BufferItems(interval="1m")
         dates = []
         date = datetime.strptime("2019-01-01T00:01:01.000", '%Y-%m-%dT%H:%M:%S.%f')
         for i in range(0, 200, 10):
@@ -56,7 +57,7 @@ class TestData(unittest.TestCase):
         eq_(mock_process_buffer.call_count, 3)
 
     def test_returnCalculatedItem_when_passFewItems(self):
-        buffer = BufferItems(interval="1m", item_cls=Item)
+        buffer = BufferItems(interval="1m")
 
         item_expected = Item(date=datetime.strptime("2019-01-01T00:02:00.000", '%Y-%m-%dT%H:%M:%S.%f'), value=20.0)
 
@@ -77,6 +78,35 @@ class TestData(unittest.TestCase):
 
         eq_(getattr(item_processed, "date"), getattr(item_expected, "date"))
         eq_(getattr(item_processed, "value"), getattr(item_expected, "value"))
+
+    def test_returnItemWithNoneValue_when_passFewItemsWithNoneValue(self):
+        buffer = BufferItems(interval="1m")
+
+        item_expected = Item(date=datetime.strptime("2019-01-01T00:02:00.000", '%Y-%m-%dT%H:%M:%S.%f'), value=None)
+
+        item1 = Item(date=datetime.strptime("2019-01-01T00:01:01.000", '%Y-%m-%dT%H:%M:%S.%f'), value=None)
+        item2 = Item(date=datetime.strptime("2019-01-01T00:01:03.000", '%Y-%m-%dT%H:%M:%S.%f'), value=None)
+        item3 = Item(date=datetime.strptime("2019-01-01T00:01:50.000", '%Y-%m-%dT%H:%M:%S.%f'), value=None)
+        item4 = Item(date=datetime.strptime("2019-01-01T00:02:00.001", '%Y-%m-%dT%H:%M:%S.%f'), value=None)
+        items = [item1, item2, item3, item4]
+
+        items_processed = []
+        for i in items:
+            item = buffer.append(i)
+            if item:
+                items_processed.append(item)
+
+        eq_(len(items_processed), 1)
+        item_processed = items_processed[0]
+
+        eq_(getattr(item_processed, "date"), getattr(item_expected, "date"))
+        eq_(getattr(item_processed, "value"), getattr(item_expected, "value"))
+
+    def test_returnListWithFieldName_when_passIntance(self):
+        item = get_item()
+        fields = BufferItems.extract_fieldname_parameters(item)
+        eq_(len(fields), 1)
+        eq_(fields[0], "value")
 
 
 if __name__ == '__main__':

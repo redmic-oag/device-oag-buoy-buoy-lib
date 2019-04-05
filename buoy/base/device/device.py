@@ -121,7 +121,7 @@ class Device(object):
         self._run_action_threads(action='stop')
 
     def is_open(self):
-        return self._dev_connection and self._dev_connection.is_open() and self.is_active()
+        return self._dev_connection and self._dev_connection.is_open and self.is_active()
 
     def write(self, data):
         self.queues['write_data'].put_nowait(data + "\r")

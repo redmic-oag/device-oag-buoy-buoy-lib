@@ -1,4 +1,7 @@
+import logging
 from datetime import timedelta
+
+logger = logging.getLogger(__name__)
 
 UNITS = {"s": "seconds", "m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
 
@@ -24,7 +27,9 @@ def convert_to_seconds(s):
 
 
 def round_time(dt=None, round_to=1, to='average'):
-    seconds = (dt - dt.min).seconds
+    logger.debug("Rounding date %s", str(dt))
+    seconds = (dt - dt.min.replace(tzinfo=dt.tzinfo)).seconds
+    logger.debug("Rounding seconds %s", str(seconds))
 
     if seconds % round_to == 0:
         rounding = (seconds + round_to / 2) // round_to * round_to
