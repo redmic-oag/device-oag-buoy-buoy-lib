@@ -61,6 +61,7 @@ class DeviceReader(DeviceBaseThread):
             raise ProcessDataExecption(message="Proccesing data without char split", exception=ex)
         for line in self.split_by_lines(buffer[0]):
             item = self.parser(line)
+            logger.debug("Returned item: %s", str(item))
             if item:
                 aggs_item = self.buffer_items.append(item)
                 if aggs_item:
